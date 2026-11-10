@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a Sorting dropdown below Previous/Next with Default, Length (Shortest), Length (Longest), and Name options, applied immediately and remembered across restarts.
 - Added DLNA duration metadata for length sorting, with original server order restored by Default and the current video preserved when sorting.
 
+### Changed
+
+- Rewrote the README with an app overview, supported video sources, and installation instructions using Downloader code `6400452`.
+- Moved detailed usage, playback, playlist, build, distribution, emulator, and API documentation into separate files under `docs/`.
+
 ## [0.1.0] - 2026-11-10
 
 ### Added
