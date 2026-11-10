@@ -46,7 +46,7 @@ This uses the same APK sideload flow as [StashAppAndroidTV](https://github.com/d
 3. Enter **PippyPlayer's APK URL** in Downloader, download, install, and open it.
 4. For a short numeric code, register that URL with the [AFTVnews URL Shortener](https://go.aftvnews.com/), then enter the assigned code in Downloader.
 
-No public release URL or short code has been registered for PippyPlayer. StashAppAndroidTV's code installs their application, not this one. Android TV is the tested target; Fire TV compatibility is not established by using Downloader.
+Use [PippyPlayer's latest APK](https://github.com/electblake/PippyPlayer/releases/latest/download/pippyplayer.apk) in Downloader. The first release uses the existing development signing identity. No numeric short code has been registered. StashAppAndroidTV's code installs their application, not this one. Android TV is the tested target; Fire TV compatibility is not established by using Downloader. See [DEPLOY.md](DEPLOY.md) for release and update instructions.
 
 ## Local Android TV emulator
 

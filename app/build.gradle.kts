@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "app.pippyplayer.tv"
     compileSdk = 36
+    buildToolsVersion = "36.0.0"
     defaultConfig {
         applicationId = "app.pippyplayer.tv"
         minSdk = 29

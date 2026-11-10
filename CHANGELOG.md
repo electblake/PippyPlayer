@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-10
+
 ### Added
 
 - Added an Android TV floating video player with LibVLC playback and a QR-accessible, TV-hosted web controller.
@@ -15,3 +17,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Advanced Mode with a saved UPnP server address, source URL conversion, and Send to Player controls.
 - Added Gradle build configuration, unit tests, Android lint, APK packaging and installation scripts, and emulator setup documentation.
 - Added Git ignore rules for build outputs, caches, local testing artifacts, and signing keys.
+- Added a release signing script and a GitHub/Downloader distribution guide.

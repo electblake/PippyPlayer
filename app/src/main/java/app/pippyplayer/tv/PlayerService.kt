@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.IBinder
-import android.net.Uri
+import androidx.core.net.toUri
 import android.view.TextureView
 import android.widget.FrameLayout
 import org.videolan.libvlc.LibVLC
@@ -178,7 +178,7 @@ class PlayerService : Service() {
         window.visibility = View.VISIBLE
         player.stop()
         media?.release()
-        media = Media(engine, Uri.parse(item.uri)).apply { setHWDecoderEnabled(false, false) }
+        media = Media(engine, item.uri.toUri()).apply { setHWDecoderEnabled(false, false) }
         player.media = media
         player.play()
     }

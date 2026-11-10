@@ -13,9 +13,10 @@
         android:banner="@drawable/banner"
         android:theme="@style/AppTheme"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true">
-        <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

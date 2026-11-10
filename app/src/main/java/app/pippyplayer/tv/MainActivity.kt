@@ -1,9 +1,9 @@
 package app.pippyplayer.tv
 
 import android.content.Intent
-import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
 import android.net.ConnectivityManager
-import android.net.Uri
+import androidx.core.net.toUri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                         Text("A little window.\nA bigger picture.", color = Color.White, fontSize = 34.sp)
                         Text("Play a video beside whatever’s on TV. Control it from your phone.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
                         if (!allowed) {
-                            Button(onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) }) {
+                            Button(onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())) }) {
                                 Text("Allow display over other apps")
                             }
                         }
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                             val url = "$controllerOrigin/${PlayerState.token}"
                             val qr = remember(url) {
                                 val matrix = QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 420, 420, mapOf(EncodeHintType.MARGIN to 2))
-                                Bitmap.createBitmap(420, 420, Bitmap.Config.ARGB_8888).apply {
+                                createBitmap(420, 420).apply {
                                     setPixels(IntArray(420 * 420) { i -> if (matrix[i % 420, i / 420]) android.graphics.Color.BLACK else android.graphics.Color.WHITE }, 0, 420, 0, 0, 420, 420)
                                 }.asImageBitmap()
                             }
