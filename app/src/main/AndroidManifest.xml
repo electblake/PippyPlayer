@@ -13,6 +13,7 @@
         android:banner="@drawable/banner"
         android:theme="@style/AppTheme"
         android:allowBackup="false"
+        android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true">

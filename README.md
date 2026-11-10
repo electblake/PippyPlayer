@@ -28,7 +28,7 @@ Paste a video, M3U/M3U8, or DLNA `upnp://` URL and press **Play on TV**. The sou
 
 ## Build
 
-Requirements: JDK 21, Android SDK platform 36, build tools 36.0.0, platform tools, accepted SDK licences, and PowerShell 7.4+. Set `JAVA_HOME` and `ANDROID_HOME` to those installations.
+Requirements: JDK 21, Android SDK platform 37, build tools 36.0.0, platform tools, accepted SDK licences, and PowerShell 7.4+. Set `JAVA_HOME` and `ANDROID_HOME` to those installations.
 
 ```powershell
 pwsh -NoProfile -File ./scripts/Build-PippyPlayer.ps1

@@ -8,7 +8,7 @@ Compatibility: Android TV / Google TV running Android 10 (API 29) or newer, with
 
 ## Prerequisites
 
-Use Windows with PowerShell **7.4+** (`pwsh`, not Windows PowerShell), JDK **21** (including `keytool`), Android SDK platform **36**, SDK Build Tools **36.0.0**, SDK command-line tools, and platform-tools (`adb`). Use the Gradle version supplied by the repository wrapper; initial dependency downloads require network access. Install Git and GitHub CLI (`gh`) for publishing, with write access to the public repository.
+Use Windows with PowerShell **7.4+** (`pwsh`, not Windows PowerShell), JDK **21** (including `keytool`), Android SDK platform **37**, SDK Build Tools **36.0.0**, SDK command-line tools, and platform-tools (`adb`). Use the Gradle version supplied by the repository wrapper; initial dependency downloads require network access. Install Git and GitHub CLI (`gh`) for publishing, with write access to the public repository.
 
 Start `pwsh -NoProfile`. Set the following paths to your actual installations; these are the paths used on the current workstation:
 
@@ -16,10 +16,10 @@ Start `pwsh -NoProfile`. Set the following paths to your actual installations; t
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 $env:JAVA_HOME = 'C:\Users\shoji\AppData\Local\mise\installs\java\21.0.2'
-$env:ANDROID_HOME = 'C:\Program Files (x86)\Android\android-sdk'
+$env:ANDROID_HOME = 'C:\Users\shoji\AppData\Local\Android\PiP-SDK'
 Set-Location 'S:\Spaces\Media-Players\PippyPlayer'
 & "$env:JAVA_HOME/bin/java.exe" -version
-& "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+& "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" 'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools'
 & "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" --licenses
 ```
 
