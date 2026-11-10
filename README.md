@@ -17,7 +17,7 @@ Requires **Android 10 / API 29 or newer** on an Android TV or Google TV device t
 
 1. Install **Downloader by AFTVnews** on your TV, or open it if you already have it.
 2. In TV settings, allow **Install unknown apps** for Downloader.
-3. Enter code **5239707** in Downloader, or open **[aftv.news/5239707](http://aftv.news/5239707)**.
+3. Enter code **8604117** in Downloader, or open **[aftv.news/8604117](http://aftv.news/8604117)**.
 4. Download the APK, choose **Install**, then open **PippyPlayer**.
 5. Select **Allow display over other apps**, grant the overlay permission, and return to PippyPlayer.
 6. Select **Start PippyPlayer**, then scan the QR code with a phone on the same network. Enter a video URL and select **Play on TV**. Press Home on the TV to keep watching alongside another app.
