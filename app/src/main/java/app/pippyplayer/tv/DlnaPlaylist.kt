@@ -113,7 +113,9 @@ internal fun parseDlnaPage(response: String, control: URI): DlnaPage {
                                     protocol[0] == "http-get" && !protocol[2].startsWith("image/")
                                 }
                             val title = node.getElementsByTagNameNS("http://purl.org/dc/elements/1.1/", "title").item(0).textContent
-                            add(DlnaObject.Video(PlaylistEntry(control.resolve(resource.textContent.trim()).toString(), title)))
+                            val duration = resource.getAttributeNode("duration")?.value?.split(':')
+                                ?.fold(0.0) { seconds, part -> seconds * 60 + part.toDouble() }
+                            add(DlnaObject.Video(PlaylistEntry(control.resolve(resource.textContent.trim()).toString(), title, duration)))
                         }
                     }
                 }

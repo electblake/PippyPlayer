@@ -2,7 +2,9 @@ package app.pippyplayer.tv
 
 import java.net.URI
 
-data class PlaylistEntry(val uri: String, val title: String?)
+data class PlaylistEntry(val uri: String, val title: String?, val durationSeconds: Double? = null)
+
+enum class PlaylistSort { DEFAULT, LENGTH_SHORTEST, LENGTH_LONGEST, NAME }
 
 object VideoPlaylist {
     fun parse(text: String, source: URI): List<PlaylistEntry> {
@@ -27,7 +29,10 @@ object VideoPlaylist {
 }
 
 class PlaybackQueue {
-    var entries: List<PlaylistEntry> = emptyList()
+    private var original: List<IndexedValue<PlaylistEntry>> = emptyList()
+    private var ordered: List<IndexedValue<PlaylistEntry>> = emptyList()
+    val entries get() = ordered.map { it.value }
+    var sorting = PlaylistSort.DEFAULT
         private set
     var index = 0
         private set
@@ -35,8 +40,27 @@ class PlaybackQueue {
     val hasPrevious get() = index > 0
     val hasNext get() = index + 1 < entries.size
 
-    fun load(items: List<PlaylistEntry>) { entries = items; index = 0 }
+    private fun sorted(sort: PlaylistSort) = when (sort) {
+        PlaylistSort.DEFAULT -> original
+        PlaylistSort.LENGTH_SHORTEST -> original.sortedBy { it.value.durationSeconds!! }
+        PlaylistSort.LENGTH_LONGEST -> original.sortedByDescending { it.value.durationSeconds!! }
+        PlaylistSort.NAME -> original.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.value.title!! })
+    }
+
+    fun sort(sort: PlaylistSort) {
+        val currentId = ordered.getOrNull(index)?.index
+        val result = sorted(sort)
+        ordered = result
+        sorting = sort
+        index = if (currentId == null) 0 else ordered.indexOfFirst { it.index == currentId }
+    }
+
+    fun load(items: List<PlaylistEntry>) {
+        original = items.withIndex().toList()
+        ordered = sorted(sorting)
+        index = 0
+    }
     fun next() { index++ }
     fun previous() { index-- }
-    fun clear() { entries = emptyList(); index = 0 }
+    fun clear() { original = emptyList(); ordered = emptyList(); index = 0 }
 }

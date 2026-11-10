@@ -5,6 +5,40 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class VideoPlaylistTest {
+    @Test fun sortingPreservesCurrentOccurrenceAndRestoresOriginalOrder() {
+        val duplicate = PlaylistEntry("same", "Bravo", 60.0)
+        val items = listOf(duplicate, PlaylistEntry("long", "alpha", 3600.0), duplicate,
+            PlaylistEntry("short", "Charlie", 2.5))
+        val queue = PlaybackQueue()
+        queue.load(items)
+        queue.next()
+        queue.next()
+        queue.sort(PlaylistSort.LENGTH_SHORTEST)
+        assertEquals(listOf(2.5, 60.0, 60.0, 3600.0), queue.entries.map { it.durationSeconds })
+        assertEquals(2, queue.index)
+        queue.sort(PlaylistSort.LENGTH_LONGEST)
+        assertEquals(listOf(3600.0, 60.0, 60.0, 2.5), queue.entries.map { it.durationSeconds })
+        assertEquals(2, queue.index)
+        queue.sort(PlaylistSort.NAME)
+        assertEquals(listOf("alpha", "Bravo", "Bravo", "Charlie"), queue.entries.map { it.title })
+        assertEquals(2, queue.index)
+        queue.sort(PlaylistSort.DEFAULT)
+        assertEquals(items, queue.entries)
+        assertEquals(2, queue.index)
+    }
+
+    @Test fun selectedSortAppliesToNewQueuesAndSurvivesClear() {
+        val queue = PlaybackQueue()
+        queue.sort(PlaylistSort.LENGTH_SHORTEST)
+        val items = listOf(PlaylistEntry("long", "Long", 100.0), PlaylistEntry("short", "Short", 10.0))
+        queue.load(items)
+        assertEquals("short", queue.current.uri)
+        queue.clear()
+        queue.load(items)
+        assertEquals("short", queue.current.uri)
+        assertEquals(0, queue.index)
+    }
+
     private val source = URI("http://tv.test/lists/watch.m3u8?key=123")
 
     @Test fun extendedPlaylistResolvesRelativeUrlsAndTitles() {

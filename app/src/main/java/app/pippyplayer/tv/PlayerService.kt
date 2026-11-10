@@ -51,6 +51,7 @@ class PlayerService : Service() {
                             .put("zoom", PlayerState.zoom).put("volume", PlayerState.volume)
                             .put("queue", JSONArray(queue.entries.map { JSONObject().put("url", it.uri).put("title", it.title) }))
                             .put("queueIndex", queue.index)
+                            .put("sorting", queue.sorting.name)
                             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
                             .put("position", PlayerState.position.name).put("playing", player.isPlaying)
                             .put("playbackState", player.playerState)
@@ -86,6 +87,16 @@ class PlayerService : Service() {
                         PlayerState.url = url
                         queue.load(entries)
                         playCurrent()
+                    }
+                    call.respondText("OK")
+                }
+                post("/sorting") {
+                    val fields = call.receiveParameters()
+                    val sorting = PlaylistSort.valueOf(fields.getAll("sorting")!!.single())
+                    withContext(Dispatchers.Main) {
+                        queue.sort(sorting)
+                        getSharedPreferences("playback", MODE_PRIVATE).edit()
+                            .putString("sorting", sorting.name).apply()
                     }
                     call.respondText("OK")
                 }
@@ -127,6 +138,8 @@ class PlayerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        queue.sort(PlaylistSort.valueOf(getSharedPreferences("playback", MODE_PRIVATE)
+            .getString("sorting", PlaylistSort.DEFAULT.name)!!))
         PlayerState.token = UUID.randomUUID().toString()
         PlayerState.url = ""
         val notifications = getSystemService(NotificationManager::class.java)

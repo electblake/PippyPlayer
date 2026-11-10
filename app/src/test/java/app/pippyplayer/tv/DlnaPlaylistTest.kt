@@ -42,12 +42,12 @@ class DlnaPlaylistTest {
     @Test fun parsesDidlAndSelectsVideoInsteadOfAlbumArt() {
         val didl = """<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:u="urn:schemas-upnp-org:metadata-1-0/upnp/">
             <container id="page/2"/><item id="1"><dc:title>A &amp; B</dc:title><u:class>object.item.videoItem</u:class>
-            <res protocolInfo="http-get:*:image/jpeg:*">/cover.jpg</res><res protocolInfo="http-get:*:video/mp4:*">/res?id=1&amp;token=x</res></item>
+            <res protocolInfo="http-get:*:image/jpeg:*">/cover.jpg</res><res protocolInfo="http-get:*:video/mp4:*" duration="1:02:03.5">/res?id=1&amp;token=x</res></item>
             <item id="2"><dc:title>Photo</dc:title><u:class>object.item.imageItem</u:class></item></DIDL-Lite>"""
         val escaped = didl.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val response = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><BrowseResponse><Result>$escaped</Result><NumberReturned>3</NumberReturned><TotalMatches>3</TotalMatches></BrowseResponse></s:Body></s:Envelope>"""
         assertEquals(DlnaPage(listOf(DlnaObject.Container("page/2"),
-            DlnaObject.Video(PlaylistEntry("http://192.168.1.44:1338/res?id=1&token=x", "A & B"))), 3, 3),
+            DlnaObject.Video(PlaylistEntry("http://192.168.1.44:1338/res?id=1&token=x", "A & B", 3723.5))), 3, 3),
             parseDlnaPage(response, control))
     }
 

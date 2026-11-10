@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a Sorting dropdown below Previous/Next with Default, Length (Shortest), Length (Longest), and Name options, applied immediately and remembered across restarts.
+- Added DLNA duration metadata for length sorting, with original server order restored by Default and the current video preserved when sorting.
+
 ## [0.1.0] - 2026-11-10
 
 ### Added
