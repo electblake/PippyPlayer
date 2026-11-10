@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-10
+
 ### Added
 
 - Added a Sorting dropdown below Previous/Next with Default, Length (Shortest), Length (Longest), and Name options, applied immediately and remembered across restarts.
@@ -14,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated Android build dependencies and resolved Android lint warnings.
 - Rewrote the README with an app overview, supported video sources, and installation instructions using Downloader code `6400452`.
 - Moved detailed usage, playback, playlist, build, distribution, emulator, and API documentation into separate files under `docs/`.
 
