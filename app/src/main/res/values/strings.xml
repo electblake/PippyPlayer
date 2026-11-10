@@ -1,4 +1,15 @@
 <resources>
+    <string name="updates_title">App updates</string>
+    <string name="updates_installed">Installed version: %1$s</string>
+    <string name="updates_explanation">Updates come directly from PippyPlayer’s GitHub releases. Allow installs from PippyPlayer once, then confirm each update in Android’s installer. Playback stops when the installer opens. Keep this screen open while downloading.</string>
+    <string name="updates_check">Check for updates</string>
+    <string name="updates_permission">Allow installs from PippyPlayer</string>
+    <string name="updates_download">Download and install update</string>
+    <string name="updates_checking">Checking GitHub releases…</string>
+    <string name="updates_available">Update available: %1$s</string>
+    <string name="updates_current">You’re up to date. Installed: %1$s · Latest release: %2$s</string>
+    <string name="updates_downloading">Downloading update: %1$d%%</string>
+    <string name="updates_installing">Download complete. Confirm the update in Android’s installer.</string>
     <string name="crash_title">PippyPlayer crashed</string>
     <string name="crash_description">The crash log is saved below. Use Up/Down to scroll.</string>
     <string name="crash_copy">Copy crash log</string>

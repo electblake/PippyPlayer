@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-10
+
+### Added
+
+- Added a native App updates screen that checked the latest GitHub release and displayed the installed version and release notes.
+- Added APK downloads with progress and an Android installer handoff, including the install-source permission flow.
+- Added numeric release-version comparison to offer only newer releases.
+
+### Changed
+
+- Documented in-app updates and the one-time manual upgrade needed for versions before 0.5.0.
+- Updated the distribution guide’s Downloader link to match the current README.
+
 ## [0.4.0] - 2026-11-10
 
 ### Added

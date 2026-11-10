@@ -74,6 +74,9 @@ class MainActivity : ComponentActivity() {
                         Text("After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
                     }
                     Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = {
+                            startActivity(Intent(this@MainActivity, UpdateActivity::class.java))
+                        }) { Text("App updates") }
                         if (PlayerState.running) {
                             val origin = if (intent.hasExtra("controller_origin")) controllerOrigin
                                 else "$controllerOrigin:${PlayerState.controllerPort}"

@@ -23,3 +23,7 @@ Requires **Android 10 / API 29 or newer** on an Android TV or Google TV device t
 6. Select **Start PippyPlayer**, then scan the QR code with a phone on the same network. Enter a video URL and select **Play on TV**. Press Home on the TV to keep watching alongside another app.
 
 See [usage and controls](docs/usage.md) for more details.
+
+## Updates
+
+Open **App updates** in PippyPlayer to check the latest GitHub release. Allow installs from PippyPlayer when prompted, then choose **Download and install update** and confirm in Android’s installer. Your saved settings remain in place. Versions before 0.5.0 need one final manual APK installation to gain the updater.
