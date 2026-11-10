@@ -17,6 +17,7 @@ enum class Position(relativeGravity: Int) {
 }
 object PlayerState {
     var running by mutableStateOf(false)
+    var debugEnabled by mutableStateOf(false)
     var controllerPort by mutableStateOf(0)
     var token by mutableStateOf(UUID.randomUUID().toString())
     var url = ""

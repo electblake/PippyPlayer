@@ -64,6 +64,13 @@ class MainActivity : ComponentActivity() {
                         Button(enabled = PlayerState.running, onClick = {
                             stopService(Intent(this@MainActivity, PlayerService::class.java))
                         }) { Text("Stop PippyPlayer") }
+                        Button(enabled = PlayerState.running, onClick = {
+                            startService(Intent(this@MainActivity, PlayerService::class.java)
+                                .putExtra("debugEnabled", !PlayerState.debugEnabled))
+                        }) { Text(if (PlayerState.debugEnabled) "Debug info: On" else "Debug info: Off") }
+                        Button(onClick = {
+                            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                        }) { Text("Playback settings") }
                         Text("After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
                     }
                     Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

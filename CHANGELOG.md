@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-10
+
+### Added
+
+- Added saved Android playback settings for the UPnP server and network buffer cache.
+- Added automatic Stash page URL translation and playback through the configured UPnP server.
+- Saved the last loaded source URL on Android across Stop, controller reloads, and app restarts.
+- Added a persistent debug toggle showing displayed and decoded FPS, media throughput, dropped frames, video format, and buffering progress.
+- Added 10-second backward and forward skip controls for seekable videos.
+
+### Changed
+
+- Enabled Android hardware decoding and direct rendering, switched video output to SurfaceView, and configured a network cache target.
+- Stopped diagnostic sampling when debug information was disabled.
+
+### Removed
+
+- Removed Advanced Mode and the UPnP conversion form from the web remote.
+- Removed personal server addresses and examples from the current source, documentation, and packaged remote.
+
+### Fixed
+
+- Fixed video surface attachment across Stop and subsequent playback.
+
 ## [0.3.1] - 2026-11-10
 
 ### Fixed

@@ -5,6 +5,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MediaSourceTest {
+    @Test fun mapsStashCollectionPagesThroughConfiguredServer() {
+        for (collection in listOf("performers", "studios", "tags", "movies", "groups")) {
+            val resolved = MediaSource.resolveUrl("https://stash.example.test/$collection/42/scenes/?sortby=date", "http://media.example.test:1338")
+            assertEquals(DlnaAddress(URI("http://media.example.test:1338/ctl"), "$collection/42"), DlnaAddress.parse(resolved))
+        }
+    }
+
+    @Test fun mapsSceneAndCollectionDetailPagesWithoutDependingOnStashHostname() {
+        for (path in listOf("scenes/7", "performers/42", "studios/3/")) {
+            val resolved = MediaSource.resolveUrl("http://another.example.test/$path", "upnp://media.example.test:1338")
+            assertEquals(path.trimEnd('/'), DlnaAddress.parse(resolved).objectId)
+        }
+    }
+
+    @Test fun leavesStreamsPlaylistsAndExplicitDlnaUrlsUnchanged() {
+        for (url in listOf("https://server/video.mp4", "https://server/scene/7/stream", "https://server/scenes/7/stream", "http://server/list.m3u8", "upnp://server/ctl?ObjectID=root", "rtsp://server/live")) {
+            assertEquals(url, MediaSource.resolveUrl(url, ""))
+        }
+    }
+
     @Test fun detectsPlaylistExtensionDespiteQuery() {
         assertTrue(MediaSource.isPlaylist(URI("http://server/LIST.M3U8?key=1"), "application/octet-stream", ""))
     }

@@ -5,7 +5,8 @@ import java.net.HttpURLConnection
 import java.net.URI
 
 object MediaSource {
-    fun load(url: String): List<PlaylistEntry> {
+    fun load(inputUrl: String, upnpServer: String): List<PlaylistEntry> {
+        val url = resolveUrl(inputUrl, upnpServer)
         val uri = URI(url)
         return when (uri.scheme.lowercase()) {
             "upnp" -> DlnaPlaylist().load(url)
@@ -32,6 +33,16 @@ object MediaSource {
             }
             else -> listOf(PlaylistEntry(url, null))
         }
+    }
+
+    internal fun resolveUrl(url: String, upnpServer: String): String {
+        val source = URI(url)
+        if (source.scheme.lowercase() !in setOf("http", "https")) return url
+        val path = source.path.trim('/')
+        if (!Regex("(?:scenes/[0-9]+|(?:performers|studios|tags|movies|groups)/[0-9]+(?:/scenes)?)").matches(path)) return url
+        val objectId = path.removeSuffix("/scenes")
+        val server = URI(upnpServer)
+        return URI("upnp", server.userInfo, server.host, server.port, "/ctl", "ObjectID=$objectId", null).toString()
     }
 
     internal fun isPlaylist(uri: URI, contentType: String?, prefix: String): Boolean {

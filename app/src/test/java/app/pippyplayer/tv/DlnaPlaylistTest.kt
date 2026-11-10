@@ -5,11 +5,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DlnaPlaylistTest {
-    private val control = URI("http://192.168.1.44:1338/ctl")
+    private val control = URI("http://media.example.test:1338/ctl")
 
     @Test fun decodesObjectIdOnceAndRemovesQueryFromControlUrl() {
-        assertEquals(DlnaAddress(control, "performers/5575"),
-            DlnaAddress.parse("upnp://192.168.1.44:1338/ctl?ObjectID=performers%2F5575"))
+        assertEquals(DlnaAddress(control, "performers/42"),
+            DlnaAddress.parse("upnp://media.example.test:1338/ctl?ObjectID=performers%2F42"))
         assertEquals("a%2Fb+c", DlnaAddress.parse("upnp://server/ctl?ObjectID=a%252Fb%2Bc").objectId)
     }
 
@@ -47,7 +47,7 @@ class DlnaPlaylistTest {
         val escaped = didl.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val response = """<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><BrowseResponse><Result>$escaped</Result><NumberReturned>3</NumberReturned><TotalMatches>3</TotalMatches></BrowseResponse></s:Body></s:Envelope>"""
         assertEquals(DlnaPage(listOf(DlnaObject.Container("page/2"),
-            DlnaObject.Video(PlaylistEntry("http://192.168.1.44:1338/res?id=1&token=x", "A & B", 3723.5))), 3, 3),
+            DlnaObject.Video(PlaylistEntry("http://media.example.test:1338/res?id=1&token=x", "A & B", 3723.5))), 3, 3),
             parseDlnaPage(response, control))
     }
 
