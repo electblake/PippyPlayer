@@ -21,6 +21,7 @@ import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.json.JSONArray
@@ -39,7 +40,7 @@ class PlayerService : Service() {
     private lateinit var manager: WindowManager
     private lateinit var layout: WindowManager.LayoutParams
     private var aspect = 16f / 9f
-    private val server = embeddedServer(CIO, host = "0.0.0.0", port = 8080) {
+    private val server = embeddedServer(CIO, host = "0.0.0.0", port = 0) {
         routing {
             route("/${PlayerState.token}") {
                 get {
@@ -183,6 +184,7 @@ class PlayerService : Service() {
             }
         }
         server.start(wait = false)
+        PlayerState.controllerPort = runBlocking { server.engine.resolvedConnectors().single().port }
         PlayerState.running = true
     }
 

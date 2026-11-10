@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-10
+
+### Fixed
+
+- Fixed server startup crashing when port 8080 was already in use by letting Android allocate the controller port and including that port in the URL and QR code.
+- Updated the README Downloader link and code to `5239707`.
+
 ## [0.3.0] - 2026-11-10
 
 ### Added

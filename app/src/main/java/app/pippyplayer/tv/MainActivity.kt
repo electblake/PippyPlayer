@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
             val network = getSystemService(ConnectivityManager::class.java)
             val address = network.getLinkProperties(network.activeNetwork)!!.linkAddresses
                 .first { it.address is Inet4Address }.address.hostAddress!!
-            controllerOrigin = "http://$address:8080"
+            controllerOrigin = "http://$address"
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +68,9 @@ class MainActivity : ComponentActivity() {
                     }
                     Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (PlayerState.running) {
-                            val url = "$controllerOrigin/${PlayerState.token}"
+                            val origin = if (intent.hasExtra("controller_origin")) controllerOrigin
+                                else "$controllerOrigin:${PlayerState.controllerPort}"
+                            val url = "$origin/${PlayerState.token}"
                             val qr = remember(url) {
                                 val matrix = QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 420, 420, mapOf(EncodeHintType.MARGIN to 2))
                                 createBitmap(420, 420).apply {

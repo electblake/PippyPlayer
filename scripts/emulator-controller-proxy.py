@@ -1,7 +1,7 @@
 """Expose an ADB-forwarded controller on the development PC's LAN interface.
 
 Usage: python scripts/emulator-controller-proxy.py 192.168.1.66 18082
-Requires: adb forward tcp:18080 tcp:8080
+Requires: adb forward tcp:18080 tcp:<port displayed by PippyPlayer>
 """
 import http.client
 import http.server
