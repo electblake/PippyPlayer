@@ -8,6 +8,7 @@
     <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <application
+        android:name=".PippyPlayerApplication"
         android:label="PippyPlayer"
         android:icon="@drawable/icon"
         android:banner="@drawable/banner"
@@ -23,6 +24,7 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CrashActivity" android:exported="false" android:process=":crash" />
         <service android:name=".PlayerService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
     </application>
 </manifest>

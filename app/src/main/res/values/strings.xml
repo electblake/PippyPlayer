@@ -1,0 +1,7 @@
+<resources>
+    <string name="crash_title">PippyPlayer crashed</string>
+    <string name="crash_description">The crash log is saved below. Use Up/Down to scroll.</string>
+    <string name="crash_copy">Copy crash log</string>
+    <string name="crash_copied">Crash log copied</string>
+    <string name="crash_reopen">Dismiss and reopen</string>
+</resources>

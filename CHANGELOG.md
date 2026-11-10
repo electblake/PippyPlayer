@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-10
+
+### Added
+
+- Added a TV crash screen showing the full uncaught exception stack trace, app version, device, Android version, and crashing thread, with remote scrolling and a Copy crash log button.
+- Saved crash reports across app restarts until dismissed, and ran the report viewer in a separate process so it survives the app crash.
+
 ## [0.2.0] - 2026-11-10
 
 ### Added

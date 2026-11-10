@@ -22,6 +22,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import java.net.Inet4Address
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private var allowed by mutableStateOf(false)
@@ -40,6 +41,11 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (File(filesDir, PippyPlayerApplication.CRASH_REPORT).exists()) {
+            startActivity(Intent(this, CrashActivity::class.java))
+            finish()
+            return
+        }
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF9AF3C5))) {
                 Row(Modifier.fillMaxSize().background(Color(0xFF101820)).padding(44.dp), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
