@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><link rel="icon" href="data:,"><title>PippyPlayer Remote</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101820;color:#eef5f3}*{box-sizing:border-box}body{margin:0;padding:12px}main{max-width:520px;margin:auto}.card{background:#1a252c;border:1px solid #35454a;padding:16px;border-radius:12px;margin-bottom:12px}label,legend{display:block;font-size:14px;font-weight:650;margin-bottom:12px}button:disabled{opacity:.4;cursor:default}#nowPlaying{overflow-wrap:anywhere;font-size:14px;color:#9af3c5}input[type=url]{width:100%;font:inherit;border:1px solid #56666d;background:#101820;color:white;border-radius:10px;padding:14px;margin-bottom:14px}button{font:inherit;font-weight:650;border:1px solid #52646b;border-radius:10px;padding:13px;background:#26373f;color:#eef5f3;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #9af3c5;outline-offset:3px}.primary{width:100%;background:#9af3c5;color:#101820;border-color:#9af3c5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.grid button{height:54px;font-size:22px}.grid button[aria-pressed=true]{background:#9af3c5;color:#101820;border-color:#9af3c5}.row{display:flex;justify-content:space-between;gap:8px}.row button{flex:1}.range{margin-top:24px}.range label{display:flex;justify-content:space-between}input[type=range]{width:100%;accent-color:#9af3c5}fieldset{border:0;padding:0;margin:0}#status{font-size:13px;overflow-wrap:anywhere;min-height:20px}
+</style></head><body><main><form id="controls"><section class="card"><label for="url">URL</label><input id="url" name="url" type="url" placeholder="https://example.com/video.mp4" required><button class="primary" type="submit">Play</button><p id="status" role="status"></p><div class="row"><button type="button" data-action="play">Resume</button><button type="button" data-action="pause">Pause</button><button type="button" data-action="stop">Stop</button></div><p id="nowPlaying" aria-live="polite"></p><div class="row"><button type="button" data-action="previous" disabled>Previous</button><button type="button" data-action="next" disabled>Next</button></div></section>
+<section class="card" id="upnpSection" hidden><fieldset id="upnpControls" disabled><legend>UPnP server</legend><label for="upnpServer">Server URL</label><input id="upnpServer" type="url" form="upnpForm" placeholder="upnp://192.168.1.44:1338" required><label for="stashUrl">Source URL</label><input id="stashUrl" type="url" form="upnpForm" placeholder="https://stash.shoji.me/performers/5575/scenes?sortby=date" required><p id="upnpResult" role="status" style="overflow-wrap:anywhere"></p><div class="row"><button type="submit" form="upnpForm">Parse for DLNA / UPnP</button><button type="button" id="sendToPlayer" disabled>Send to Player</button></div></fieldset></section>
+<section class="card"><fieldset><legend>Position</legend><div class="grid" id="positions"></div></fieldset>
+<div class="range"><label for="size">Size <output id="sizeValue">30%</output></label><input type="range" id="size" name="size" min="15" max="90" value="30"></div>
+<div class="range"><label for="zoom">Zoom <output id="zoomValue">1.0×</output></label><input type="range" id="zoom" name="zoom" min="1" max="3" step="0.1" value="1"></div>
+<div class="range"><label for="volume">Volume <output id="volumeValue">50%</output></label><input type="range" id="volume" name="volume" min="0" max="100" value="50"></div></section></form><section class="card"><fieldset><legend>Settings</legend><label for="advancedMode" style="display:flex;align-items:center;gap:10px;margin:0"><input id="advancedMode" type="checkbox" role="switch" style="accent-color:#9af3c5;width:20px;height:20px">Advanced Mode</label></fieldset></section><form id="upnpForm"></form></main>
+<script>
+const base = location.pathname.replace(/\/$/, '');
+const form = document.querySelector('form'), status = document.querySelector('#status');
+const positions = ['TOP_LEFT','TOP_CENTER','TOP_RIGHT','MIDDLE_LEFT','MIDDLE_CENTER','MIDDLE_RIGHT','BOTTOM_LEFT','BOTTOM_CENTER','BOTTOM_RIGHT'];
+const arrows = ['↖','↑','↗','←','•','→','↙','↓','↘'];
+let position = 'BOTTOM_RIGHT';
+function selectPosition(value) { position=value; document.querySelectorAll('#positions button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.position===value))); }
+positions.forEach((value,i)=>{const b=document.createElement('button'); b.type='button';b.textContent=arrows[i];b.title=value.toLowerCase().replaceAll('_',' ');b.setAttribute('aria-label',b.title);b.dataset.position=value;b.onclick=async()=>{selectPosition(value);await apply();};document.querySelector('#positions').append(b);});
+function labels(){for(const id of ['size','zoom','volume'])document.querySelector('#'+id+'Value').textContent=document.querySelector('#'+id).value+(id==='zoom'?'×':'%');}
+async function state(){return (await fetch(base+'/state')).json();}
+async function apply(){const body=new URLSearchParams(new FormData(form));body.set('position',position);status.textContent=await (await fetch(base+'/config',{method:'POST',body})).text();}
+form.onsubmit=async event=>{event.preventDefault();await apply();status.textContent='Loading…';const body=new URLSearchParams({url:document.querySelector('#url').value});status.textContent=await(await fetch(base+'/source',{method:'POST',body})).text();showStatus(await state());};
+for(const id of ['size','zoom','volume']){const input=document.querySelector('#'+id);input.oninput=labels;input.onchange=apply;}
+document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{status.textContent=await (await fetch(base+'/'+b.dataset.action,{method:'POST'})).text();if(b.dataset.action==='stop')document.querySelector('#url').value='';showStatus(await state());});
+async function start(){const s=await state();for(const id of ['url','size','zoom','volume'])document.querySelector('#'+id).value=s[id];selectPosition(s.position);labels();showStatus(s);setInterval(async()=>showStatus(await state()),1500);}
+function showStatus(s){
+const current=s.queue[s.queueIndex];document.querySelector('#nowPlaying').textContent=current?`${s.queueIndex+1} / ${s.queue.length}`:'';
+document.querySelector('[data-action=previous]').disabled=!s.hasPrevious;document.querySelector('[data-action=next]').disabled=!s.hasNext;
+status.textContent=s.error!==null?s.error:(s.playing?'Playing':s.playbackState===1?'Loading…':s.playbackState===6?'Ended':s.queue.length?'Paused':'');}
+const advancedMode=document.querySelector('#advancedMode'), upnpServer=document.querySelector('#upnpServer'), stashUrl=document.querySelector('#stashUrl'), upnpResult=document.querySelector('#upnpResult'), sendToPlayer=document.querySelector('#sendToPlayer');
+advancedMode.checked=localStorage.getItem('advancedMode')==='true';
+upnpServer.value=localStorage.getItem('upnpServer');
+function clearParsedUrl(){upnpResult.textContent='';sendToPlayer.disabled=true;}
+function showAdvanced(){document.querySelector('#upnpSection').hidden=!advancedMode.checked;document.querySelector('#upnpControls').disabled=!advancedMode.checked;clearParsedUrl();}
+advancedMode.onchange=()=>{localStorage.setItem('advancedMode',advancedMode.checked);showAdvanced();};
+upnpServer.oninput=()=>{localStorage.setItem('upnpServer',upnpServer.value);clearParsedUrl();};
+stashUrl.oninput=clearParsedUrl;
+for(const input of [upnpServer,stashUrl])input.oninvalid=()=>{upnpResult.textContent=input.validationMessage;sendToPlayer.disabled=true;};
+document.querySelector('#upnpForm').onsubmit=event=>{event.preventDefault();const source=new URL(stashUrl.value);const result=new URL('/ctl',upnpServer.value);result.search=new URLSearchParams({ObjectID:source.pathname.replace(/^\//,'').replace(/\/scenes\/?$/,'').replace(/\/$/,'')}).toString();upnpResult.textContent=result.href;sendToPlayer.disabled=false;};
+sendToPlayer.onclick=()=>{document.querySelector('#url').value=upnpResult.textContent;};
+showAdvanced();
+start();
+</script></body></html>

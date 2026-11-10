@@ -1,0 +1,49 @@
+# Gradle and Kotlin caches
+# Keep gradle/wrapper/, gradlew, and gradlew.bat in source control.
+.gradle/
+.kotlin/
+
+# IDE and machine settings
+.idea/
+*.iml
+local.properties
+
+# Build outputs and Android native caches
+**/build/
+out/
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Packaged APK and checksum written by scripts/Build-PippyPlayer.ps1
+/dist/
+
+# Local emulator/media probes, screenshots, and controller session URLs
+/artifacts/
+
+# Browser automation snapshots and console output
+/.playwright-mcp/
+
+# Signing keys
+*.jks
+*.keystore
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+hs_err_pid*
+replay_pid*
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

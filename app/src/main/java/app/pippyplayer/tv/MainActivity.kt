@@ -1,0 +1,85 @@
+package app.pippyplayer.tv
+
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.Uri
+import android.os.Bundle
+import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.tv.material3.*
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import java.net.Inet4Address
+
+class MainActivity : ComponentActivity() {
+    private var allowed by mutableStateOf(false)
+    private var controllerOrigin by mutableStateOf("")
+    override fun onResume() {
+        super.onResume()
+        allowed = Settings.canDrawOverlays(this)
+        if (intent.hasExtra("controller_origin")) {
+            controllerOrigin = intent.getStringExtra("controller_origin")!!
+        } else {
+            val network = getSystemService(ConnectivityManager::class.java)
+            val address = network.getLinkProperties(network.activeNetwork)!!.linkAddresses
+                .first { it.address is Inet4Address }.address.hostAddress!!
+            controllerOrigin = "http://$address:8080"
+        }
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF9AF3C5))) {
+                Row(Modifier.fillMaxSize().background(Color(0xFF101820)).padding(44.dp), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Text("PIPPYPLAYER", color = Color(0xFF9AF3C5), fontSize = 18.sp)
+                        Text("A little window.\nA bigger picture.", color = Color.White, fontSize = 34.sp)
+                        Text("Play a video beside whatever’s on TV. Control it from your phone.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
+                        if (!allowed) {
+                            Button(onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) }) {
+                                Text("Allow display over other apps")
+                            }
+                        }
+                        Button(enabled = allowed && !PlayerState.running, onClick = {
+                            startForegroundService(Intent(this@MainActivity, PlayerService::class.java))
+                        }) { Text("Start PippyPlayer") }
+                        Button(enabled = PlayerState.running, onClick = {
+                            stopService(Intent(this@MainActivity, PlayerService::class.java))
+                        }) { Text("Stop PippyPlayer") }
+                        Text("After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
+                    }
+                    Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (PlayerState.running) {
+                            val url = "$controllerOrigin/${PlayerState.token}"
+                            val qr = remember(url) {
+                                val matrix = QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 420, 420, mapOf(EncodeHintType.MARGIN to 2))
+                                Bitmap.createBitmap(420, 420, Bitmap.Config.ARGB_8888).apply {
+                                    setPixels(IntArray(420 * 420) { i -> if (matrix[i % 420, i / 420]) android.graphics.Color.BLACK else android.graphics.Color.WHITE }, 0, 420, 0, 0, 420, 420)
+                                }.asImageBitmap()
+                            }
+                            Image(qr, "Scan to open your PippyPlayer controller", Modifier.size(230.dp))
+                            Text("Scan. Choose. Play.", color = Color.White, fontSize = 22.sp)
+                            Text("Connect your phone to the same home network as this TV.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
+                            Text(url, color = Color(0xFF9AF3C5), fontSize = 12.sp)
+                        } else {
+                            Text("Your phone is the remote.", color = Color.White, fontSize = 26.sp)
+                            Text("Start PippyPlayer to show your private controller QR code. No companion app needed.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
