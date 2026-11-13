@@ -7,6 +7,9 @@ import android.graphics.PixelFormat
 import android.os.IBinder
 import androidx.core.net.toUri
 import android.view.SurfaceView
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.FrameLayout
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
@@ -45,7 +48,9 @@ class PlayerService : Service() {
     private var aspect = 16f / 9f
     private lateinit var debugView: TextView
     private var previousSample: PlaybackSample? = null
-    private var buffering: Float? = null
+    private val loading = PlaybackLoading()
+    private lateinit var loadingView: LinearLayout
+    private lateinit var loadingLabel: TextView
     private var debugText = "No media loaded"
     private var activeNetworkCacheMs: Int? = null
     private val debugTick = object : Runnable {
@@ -70,6 +75,8 @@ class PlayerService : Service() {
                             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
                             .put("position", PlayerState.position.name).put("playing", player.isPlaying)
                             .put("playbackState", player.playerState)
+                            .put("loading", loading.visible).put("loadingText", loading.label)
+                            .put("bufferingPercent", loading.percent ?: JSONObject.NULL)
                             .put("seekable", player.isSeekable)
                             .put("error", if (player.playerState == IMedia.State.Error) "LibVLC playback error" else JSONObject.NULL)
                             .put("width", layout.width).put("height", layout.height)
@@ -165,6 +172,8 @@ class PlayerService : Service() {
                         media?.release()
                         media = null
                         resetDebugInfo()
+                        loading.clear()
+                        updateLoadingView()
                         queue.clear()
                         player.vlcVout.detachViews()
                         window.visibility = View.GONE
@@ -198,11 +207,28 @@ class PlayerService : Service() {
             setPadding(8, 4, 8, 4)
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
+        loadingLabel = TextView(this).apply {
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 14f
+            gravity = Gravity.CENTER
+        }
+        loadingView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(16, 12, 16, 12)
+            setBackgroundColor(0xDD101820.toInt())
+            addView(ProgressBar(this@PlayerService), LinearLayout.LayoutParams(
+                (28 * resources.displayMetrics.density).toInt(),
+                (28 * resources.displayMetrics.density).toInt()))
+            addView(loadingLabel)
+            visibility = View.GONE
+        }
         window = FrameLayout(this).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
             keepScreenOn = true
             addView(videoSurface, FrameLayout.LayoutParams(-1, -1))
             addView(debugView, FrameLayout.LayoutParams(-1, -2))
+            addView(loadingView, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
             visibility = View.GONE
         }
         manager = getSystemService(WindowManager::class.java)
@@ -212,8 +238,18 @@ class PlayerService : Service() {
         setLayout()
         manager.addView(window, layout)
         player.setEventListener { event ->
-            if (event.type == MediaPlayer.Event.Playing) player.volume = PlayerState.volume
-            if (event.type == MediaPlayer.Event.Buffering) buffering = event.buffering
+            when (event.type) {
+                MediaPlayer.Event.Opening -> loading.start()
+                MediaPlayer.Event.Buffering -> loading.buffering(event.buffering)
+                MediaPlayer.Event.Playing -> {
+                    player.volume = PlayerState.volume
+                    loading.playing()
+                }
+                MediaPlayer.Event.Paused -> loading.pause()
+                MediaPlayer.Event.Stopped, MediaPlayer.Event.EndReached,
+                MediaPlayer.Event.EncounteredError -> loading.clear()
+            }
+            updateLoadingView()
             if (event.type == MediaPlayer.Event.EndReached) {
                 main.post {
                     if (player.playerState == IMedia.State.Ended && queue.hasNext) {
@@ -255,7 +291,15 @@ class PlayerService : Service() {
         }
         resetDebugInfo()
         player.media = media
+        loading.start()
+        updateLoadingView()
         player.play()
+    }
+
+    private fun updateLoadingView() {
+        val visibility = if (loading.visible) View.VISIBLE else View.GONE
+        if (loadingView.visibility != visibility) loadingView.visibility = visibility
+        if (loading.visible && loadingLabel.text != loading.label) loadingLabel.text = loading.label
     }
 
     private fun setLayout() {
@@ -283,7 +327,6 @@ class PlayerService : Service() {
 
     private fun resetDebugInfo() {
         previousSample = null
-        buffering = null
         debugText = if (media == null) "No media loaded" else "Waiting for playback statistics…"
         debugView.text = debugText
     }
@@ -315,7 +358,7 @@ class PlayerService : Service() {
             "$state · ${player.time / 1000}s · Hardware decoding requested",
             "FPS shown ${number(rates?.displayedFps)} / decoded ${number(rates?.decodedFps)} / source ${number(sourceFps)}",
             "Media input ${number(rates?.megabitsPerSecond)} Mbps · Dropped ${stats?.lostPictures ?: "—"}",
-            "Last buffering progress ${number(buffering?.toDouble())}%",
+            "Last buffering progress ${number(loading.percent?.toDouble())}%",
             if (track == null) "Video format —" else "${track.width}×${track.height} · ${track.codec}",
             "Network cache target: ${activeNetworkCacheMs ?: "—"} ms · Occupancy: unavailable"
         ).joinToString("\n")

@@ -14,6 +14,8 @@ The last successfully loaded source URL is also saved on Android. Opening or rel
 
 ## Playback diagnostics
 
+The TV overlay and remote show a spinner while opening media and a buffering percentage while VLC refills its buffer. These indicators work with diagnostics disabled. Buffering takes precedence over VLC's playing flag and clears when the refill reaches 100%; paused playback hides the indicator. The percentage is progress through the current refill, not measured buffer occupancy. Decoder or rendering stalls that do not emit buffering events are not labelled as network buffering.
+
 Toggle **Debug info** in the TV app or **Debug info on TV and remote** under the remote's Settings. The setting persists and controls both the overlay and the remote panel. Statistics are sampled once per second only while enabled; the remote refreshes every 1.5 seconds. Disabling diagnostics removes the sampling callback and overlay.
 
 - Displayed and decoded FPS are counter deltas over monotonic elapsed time, not the video's advertised frame rate. Source FPS is shown separately. A dash means a measurement is not available yet.

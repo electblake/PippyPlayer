@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added loading and buffering indicators on the TV overlay and remote, independent of debug mode.
+
 ### Fixed
 
 - Fixed the selected volume resetting between videos by reapplying it when playback started.
