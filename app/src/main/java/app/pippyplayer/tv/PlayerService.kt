@@ -212,6 +212,7 @@ class PlayerService : Service() {
         setLayout()
         manager.addView(window, layout)
         player.setEventListener { event ->
+            if (event.type == MediaPlayer.Event.Playing) player.volume = PlayerState.volume
             if (event.type == MediaPlayer.Event.Buffering) buffering = event.buffering
             if (event.type == MediaPlayer.Event.EndReached) {
                 main.post {
