@@ -76,12 +76,12 @@ class VideoPlaylistTest {
     }
 
     @Test fun hlsMediaManifestRemainsOneStream() {
-        assertEquals(listOf(PlaylistEntry(source.toString(), null)),
+        assertEquals(listOf(PlaylistEntry(source.toString(), null, mimeType = "application/x-mpegURL")),
             VideoPlaylist.parse("#EXTM3U\n#EXT-X-TARGETDURATION:8\n#EXTINF:8,\nsegment.ts", source))
     }
 
     @Test fun hlsMasterManifestRemainsOneStream() {
-        assertEquals(listOf(PlaylistEntry(source.toString(), null)),
+        assertEquals(listOf(PlaylistEntry(source.toString(), null, mimeType = "application/x-mpegURL")),
             VideoPlaylist.parse("#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=100000\nlow.m3u8", source))
     }
 

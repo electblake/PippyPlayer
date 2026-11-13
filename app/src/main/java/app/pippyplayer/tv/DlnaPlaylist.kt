@@ -107,11 +107,11 @@ internal fun parseDlnaPage(response: String, control: URI): DlnaPage {
                         val kind = node.getElementsByTagNameNS("urn:schemas-upnp-org:metadata-1-0/upnp/", "class").item(0).textContent
                         if (kind.startsWith("object.item.videoItem")) {
                             val resources = node.getElementsByTagNameNS(DIDL, "res")
-                            val resource = (0 until resources.length).map { resources.item(it) as Element }
-                                .first {
+                            val resource = selectDlnaResource((0 until resources.length).map { resources.item(it) as Element }
+                                .filter {
                                     val protocol = it.getAttribute("protocolInfo").split(':', limit = 4)
                                     protocol[0] == "http-get" && !protocol[2].startsWith("image/")
-                                }
+                                })
                             val title = node.getElementsByTagNameNS("http://purl.org/dc/elements/1.1/", "title").item(0).textContent
                             val duration = resource.getAttributeNode("duration")?.value?.split(':')
                                 ?.fold(0.0) { seconds, part -> seconds * 60 + part.toDouble() }
@@ -124,3 +124,15 @@ internal fun parseDlnaPage(response: String, control: URI): DlnaPage {
     }
     return DlnaPage(objects, returned, total)
 }
+
+/** Rank existing resources; this never requests or performs a transcode. */
+internal fun selectDlnaResource(resources: List<Element>): Element = resources.map { element ->
+    val dimensions = element.getAttributeNode("resolution")?.value?.split('x')?.map(String::toInt)
+    val pixels = dimensions?.let { it[0].toLong() * it[1] }
+    val withinPipSize = dimensions != null && dimensions.max() <= 1280 && dimensions.min() <= 720
+    Triple(element, when {
+        dimensions == null -> 2
+        withinPipSize -> 0
+        else -> 1
+    }, if (withinPipSize) -pixels!! else pixels)
+}.sortedWith(compareBy<Triple<Element, Int, Long?>> { it.second }.thenBy { it.third }).first().first

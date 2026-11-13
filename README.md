@@ -9,6 +9,8 @@ Watch video in a floating window on your Android TV or Google TV while using oth
 - M3U/M3U8 playlists and DLNA/UPnP video folders.
 - Android media URIs accessible to the TV.
 
+Video requires a hardware decoder for the source codec/profile. PiP prefers existing smaller renditions and preloads the next video without transcoding on the TV.
+
 Webpages, DRM-protected services, authenticated providers, and video-file uploads are not supported. See [playback details](docs/playback.md) and [playlist usage](docs/playlists.md).
 
 ## Install

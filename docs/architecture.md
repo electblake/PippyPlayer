@@ -1,13 +1,13 @@
 # Architecture and API
 
-Kotlin/Compose TV launcher, foreground media playback service, LibVLC, TextureView overlay, Ktor CIO HTTP server, ZXing QR generator, and a bundled vanilla HTML/CSS/JS controller. No application recovery, retry, fallback provider, or compatibility layer is implemented.
+Kotlin/Compose TV launcher, foreground media playback service, Media3 ExoPlayer, a hardware-decoded SurfaceView overlay, Ktor CIO HTTP server, ZXing QR generator, and a bundled vanilla HTML/CSS/JS controller. No application recovery, retry, fallback provider, or compatibility layer is implemented.
 
 All routes are below `/<session-token>`:
 
 | Method | Route | Purpose |
 | --- | --- | --- |
 | GET | `/` (without trailing slash) | Controller HTML |
-| GET | `/state` | Settings, playback state, dimensions, elapsed time, native error |
+| GET | `/state` | Settings, named playback state, loading state, buffered milliseconds, decoder, dimensions, elapsed time, native error |
 | POST | `/config` | Layout/audio form fields: `position`, `size`, `zoom`, `volume` |
 | POST | `/source` | Load `url`; automatically detect direct video, playlist, or DLNA |
 | POST | `/previous`, `/next` | Move through the queue |

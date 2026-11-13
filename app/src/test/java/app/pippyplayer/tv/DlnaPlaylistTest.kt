@@ -3,9 +3,33 @@ package app.pippyplayer.tv
 import java.net.URI
 import org.junit.Assert.*
 import org.junit.Test
+import javax.xml.parsers.DocumentBuilderFactory
 
 class DlnaPlaylistTest {
     private val control = URI("http://media.example.test:1338/ctl")
+
+    private fun resources(vararg sizes: String?) = sizes.mapIndexed { index, size ->
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument().createElement("res").apply {
+            textContent = "video$index"
+            if (size != null) setAttribute("resolution", size)
+        }
+    }
+
+    @Test fun selectsLargestExistingResourceWithinPipBudget() {
+        assertEquals("video2", selectDlnaResource(resources("3840x2160", "640x360", "1280x720", "1920x1080")).textContent)
+    }
+
+    @Test fun selectsSmallestKnownResourceWhenAllExceedPipBudget() {
+        assertEquals("video1", selectDlnaResource(resources("3840x2160", "1920x1080", null)).textContent)
+    }
+
+    @Test fun portraitResourceUsesSamePixelDimensionsBudget() {
+        assertEquals("video1", selectDlnaResource(resources("1080x1920", "720x1280", "360x640")).textContent)
+    }
+
+    @Test fun resourcesWithoutResolutionRetainServerOrder() {
+        assertEquals("video0", selectDlnaResource(resources(null, null)).textContent)
+    }
 
     @Test fun decodesObjectIdOnceAndRemovesQueryFromControlUrl() {
         assertEquals(DlnaAddress(control, "performers/42"),

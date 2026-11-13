@@ -18,9 +18,9 @@ class PlaybackSampleTest {
         assertEquals(PlaybackRates(0.0, 0.0, 0.0), rates)
     }
 
-    @Test fun byteCounterWrapDoesNotProduceNegativeSpeed() {
-        val rates = PlaybackSample(2000, 60, 60, Int.MIN_VALUE + 999)
-            .ratesSince(PlaybackSample(1000, 30, 30, Int.MAX_VALUE - 1000))
+    @Test fun byteCountersBeyondTwoGigabytesKeepAccurateRates() {
+        val rates = PlaybackSample(2000, 60, 60, 3_000_002_000L)
+            .ratesSince(PlaybackSample(1000, 30, 30, 3_000_000_000L))
         assertEquals(0.016, rates.megabitsPerSecond, 0.0001)
     }
 }

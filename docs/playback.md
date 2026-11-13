@@ -1,27 +1,39 @@
 # Playback scope
 
-LibVLC handles direct progressive media (such as MP4/WebM), HLS, DASH, RTSP and accessible Android media URIs. Playback enables Android hardware decoding and MediaCodec direct rendering instead of forcing the bundled software video decoder. Video renders through a SurfaceView so Android can compose its surface separately from the app UI, avoiding TextureView composition overhead. Network media uses the cache target saved in the Android app (initially 3,000 ms) to absorb delivery jitter; this can increase startup latency and is not a guaranteed amount of buffered content. A URI must be readable by the TV app; a phone's local file URI does not transfer the file. Webpages, authenticated providers, DRM services, and video-file uploads are outside this version.
+Media3 ExoPlayer handles progressive media (such as MP4/WebM), HLS, DASH, RTSP and accessible Android media URIs. Video uses Android hardware decoders and renders directly to a SurfaceView. The same player and surface remain attached across playlist transitions. Decoder prewarming is disabled: next-item preloading buffers compressed samples without starting a second video decoder. PiP does not request audio focus or display refresh-rate changes.
 
-Portrait, landscape, square and ultrawide videos retain their aspect ratio. Window size fits the video into the chosen percentage of the screen's width and height. Zoom enlarges/crops the video inside that window. Volume affects this player only. The player does not request audio focus, so it does not deliberately pause or duck other apps. Simultaneous video/audio depends on the device and the other app; apps can hide overlays and hardware decoder limits still apply.
+A source must use a video codec/profile supported by the device's hardware decoder. There is no software video decoder path or on-device transcoding. Audio uses Android's available decoders. A URI must be readable by the TV app; a phone's local file URI does not transfer the file. Webpages, authenticated providers, DRM services, and video-file uploads are outside this version.
 
-This implementation uses a permission-based `TYPE_APPLICATION_OVERLAY`, following the supplied local Picture-in-picture reference, to support all nine positions. Native Android PiP is system-positioned and does not expose that control. Google recommends native PiP for standard PiP experiences: [Android PiP documentation](https://developer.android.com/develop/ui/views/picture-in-picture). This project targets sideloading on devices that allow overlays; no native-PiP fallback is included.
+Portrait, landscape, square and ultrawide videos retain their aspect ratio. Window size fits the video into the chosen percentage of the screen's width and height. Zoom enlarges/crops the video inside that window. Volume affects this player only and survives video transitions. Simultaneous playback with another app depends on the TV's decoder and memory-bandwidth capacity.
+
+## Buffering and rendition selection
+
+- Forward buffering targets 10–20 seconds, with a 16 MiB compressed-sample allocation target and no retained back buffer. Startup waits for 1.5 seconds; rebuffering defaults to 3 seconds. Media3 also considers byte limits and end of source when deciding readiness. These are targets, not guarantees or total process-memory limits.
+- Up to 3 seconds of the next playlist item is preloaded only when current playback is not loading. Preloading additionally stops when combined sample allocations reach 20 MiB; a read already in progress can exceed that threshold. Current playback always retains loading priority.
+- HLS/DASH track selection prefers video within 1280×720 and 30 fps. This selects existing tracks; it does not resize encoded video. A single higher-resolution source still requires decoding its original resolution.
+- DLNA ranks advertised HTTP video resources: largest known resolution within 1280×720 (either orientation), then smallest known resolution above that budget, then resources with unknown resolution in server order. It does not request transcoding. Frame rate is constrained for adaptive tracks, not inferred from DLNA resolution metadata.
+- Next/Previous seeks within the existing playlist. Sorting moves existing items while retaining the current occurrence, position and volume, including duplicate URLs. Automatic advancement is managed by Media3.
+
+A smaller PiP window alone does not reduce decode workload. Prebuffering absorbs delivery jitter; it cannot fix sustained insufficient bandwidth, unsupported codecs, decoder contention or corrupt frames. Test simultaneous playback on the target TV.
+
+The overlay uses permission-based `TYPE_APPLICATION_OVERLAY` to support all nine positions. Native Android PiP is system-positioned and does not expose that control. See [Android PiP documentation](https://developer.android.com/develop/ui/views/picture-in-picture).
 
 ## Android playback settings
 
-Open **Playback settings** in the Android app to set the **UPnP server URL** and **Network buffer cache (milliseconds)**. Both are saved on the Android device; neither is configured through the phone remote. The server URL starts empty. Cache changes apply to the next loaded video or playlist item, without restarting current playback.
+Open **Playback settings** to set the **UPnP server URL** and **Resume buffer after a stall (milliseconds)**. Both are saved on Android. The existing saved cache value is now the rebuffer threshold. Stop and start the PippyPlayer service from the TV app to apply a changed threshold. Thresholds greater than 10/20 seconds also raise the respective forward-buffer time targets; the byte target remains unchanged.
 
-The last successfully loaded source URL is also saved on Android. Opening or reloading the remote restores it, including after an app restart. Stop clears playback but keeps the URL. Playback does not start automatically.
+The last loaded source URL remains saved across Stop, remote reloads and app restarts. Stop clears playback but keeps the URL. Playback does not start automatically.
 
 ## Playback diagnostics
 
-The TV overlay and remote show a spinner while opening media and a buffering percentage while VLC refills its buffer. These indicators work with diagnostics disabled. Buffering takes precedence over VLC's playing flag and clears when the refill reaches 100%; paused playback hides the indicator. The percentage is progress through the current refill, not measured buffer occupancy. Decoder or rendering stalls that do not emit buffering events are not labelled as network buffering.
+The TV and remote show **Loading…** during startup and **Buffering…** during refills. These indicators work with diagnostics disabled and hide during pause. They use Media3's buffering state; they do not label every decoder/rendering stall as buffering or invent a percentage.
 
-Toggle **Debug info** in the TV app or **Debug info on TV and remote** under the remote's Settings. The setting persists and controls both the overlay and the remote panel. Statistics are sampled once per second only while enabled; the remote refreshes every 1.5 seconds. Disabling diagnostics removes the sampling callback and overlay.
+Toggle **Debug info** on the TV or remote to see one-second samples (remote refreshes every 1.5 seconds):
 
-- Displayed and decoded FPS are counter deltas over monotonic elapsed time, not the video's advertised frame rate. Source FPS is shown separately. A dash means a measurement is not available yet.
-- Media input Mbps measures bytes read by VLC, not Wi-Fi link speed or a speed test. Bursty input and zero-throughput intervals can be normal while buffered data is playing.
-- Dropped frames are VLC's cumulative lost-picture count for the current media. The resolution and codec describe the selected video track.
-- Last buffering progress comes from VLC's buffering events. It does not report free bytes, buffer capacity, or seconds of playable content. The cache target is a configuration value, not measured occupancy.
-- “Hardware decoding requested” describes configuration, not proof that the device selected a hardware codec. Verify the selected MediaCodec implementation in device logs when profiling.
+- Active hardware video decoder name and selected video dimensions, MIME type and source frame rate.
+- Rendered FPS and frames queued to the decoder, plus cumulative dropped buffers for the active renderer. Queued frames are not proof of successful decoding.
+- Network input Mbps, including next-item preloading. Bursty reads and zero-input intervals while buffered video plays are normal.
+- Actual buffered media duration, playWhenReady and playback suppression reason. Duration is Media3's total buffered media time, not allocated memory or link speed.
+- A snapshot immediately before the last Resume request, also written to logcat under `PippyPlayer`. Resume does not automatically reload or retry failed media.
 
-DLNA browsing currently selects the first HTTP media resource advertised by the server. It does not negotiate adaptive quality or request transcoding. A smaller overlay still decodes the original video resolution. To reduce that workload and network demand, the server must supply a lower-resolution/lower-bitrate resource. Additional caching can absorb short network stalls but cannot fix sustained insufficient bandwidth or decoder overload. Hardware decoder capacity and performance alongside another video app need verification on the target TV.
+Disabling diagnostics stops periodic sampling. Buffering indicators and lightweight network-byte/decoder-event counters continue to operate. To investigate a stall, compare buffered duration, rendered FPS, dropped buffers and the pre-Resume state while both apps are playing.

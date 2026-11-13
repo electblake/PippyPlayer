@@ -5,16 +5,26 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.IBinder
-import androidx.core.net.toUri
 import android.view.SurfaceView
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.FrameLayout
-import org.videolan.libvlc.LibVLC
-import org.videolan.libvlc.Media
-import org.videolan.libvlc.MediaPlayer
-import org.videolan.libvlc.interfaces.IMedia
+import androidx.media3.common.C
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.TransferListener
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import android.view.View
 import android.view.WindowManager
 import io.ktor.http.ContentType
@@ -27,18 +37,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import org.json.JSONArray
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.widget.TextView
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 
+@androidx.annotation.OptIn(UnstableApi::class)
 class PlayerService : Service() {
-    private lateinit var engine: LibVLC
-    private lateinit var player: MediaPlayer
-    private var media: Media? = null
+    private lateinit var player: ExoPlayer
     private val queue = PlaybackQueue()
     private val main = Handler(Looper.getMainLooper())
     private lateinit var videoSurface: SurfaceView
@@ -48,11 +57,16 @@ class PlayerService : Service() {
     private var aspect = 16f / 9f
     private lateinit var debugView: TextView
     private var previousSample: PlaybackSample? = null
-    private val loading = PlaybackLoading()
+    private var hasPlayed = false
+    private val loading get() = PlaybackLoading.from(
+        player.playbackState == Player.STATE_BUFFERING, player.playWhenReady, hasPlayed)
     private lateinit var loadingView: LinearLayout
     private lateinit var loadingLabel: TextView
     private var debugText = "No media loaded"
-    private var activeNetworkCacheMs: Int? = null
+    private var rebufferMs = 0
+    private val networkBytes = AtomicLong()
+    private var decoderName: String? = null
+    private var lastResume = "No resume requested"
     private val debugTick = object : Runnable {
         override fun run() {
             updateDebugInfo()
@@ -69,19 +83,20 @@ class PlayerService : Service() {
                     val state = withContext(Dispatchers.Main) {
                         JSONObject().put("url", PlayerState.url).put("size", PlayerState.size)
                             .put("zoom", PlayerState.zoom).put("volume", PlayerState.volume)
-                            .put("queue", JSONArray(queue.entries.map { JSONObject().put("url", it.uri).put("title", it.title) }))
+                            .put("queueLength", queue.count)
                             .put("queueIndex", queue.index)
                             .put("sorting", queue.sorting.name)
                             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
                             .put("position", PlayerState.position.name).put("playing", player.isPlaying)
-                            .put("playbackState", player.playerState)
+                            .put("playbackState", playbackState())
                             .put("loading", loading.visible).put("loadingText", loading.label)
-                            .put("bufferingPercent", loading.percent ?: JSONObject.NULL)
-                            .put("seekable", player.isSeekable)
-                            .put("error", if (player.playerState == IMedia.State.Error) "LibVLC playback error" else JSONObject.NULL)
+                            .put("bufferedMs", player.totalBufferedDuration)
+                            .put("decoder", decoderName ?: JSONObject.NULL)
+                            .put("seekable", player.isCurrentMediaItemSeekable && player.duration != C.TIME_UNSET)
+                            .put("error", player.playerError?.toString() ?: JSONObject.NULL)
                             .put("width", layout.width).put("height", layout.height)
                             .put("debugEnabled", PlayerState.debugEnabled).put("debugText", debugText)
-                            .put("elapsed", player.time).toString()
+                            .put("elapsed", player.currentPosition).toString()
                     }
                     call.respondText(state, ContentType.Application.Json)
                 }
@@ -102,7 +117,7 @@ class PlayerService : Service() {
                         PlayerState.size = size
                         PlayerState.zoom = zoom
                         PlayerState.volume = volume
-                        player.volume = volume
+                        player.volume = volume / 100f
                         updateWindow()
                     }
                     call.respondText("OK")
@@ -115,7 +130,7 @@ class PlayerService : Service() {
                     withContext(Dispatchers.Main) {
                         PlayerState.url = url
                         queue.load(entries)
-                        playCurrent()
+                        loadQueue()
                         settings.lastPlayedUrl = url
                     }
                     call.respondText("OK")
@@ -125,6 +140,7 @@ class PlayerService : Service() {
                     val sorting = PlaylistSort.valueOf(fields.getAll("sorting")!!.single())
                     withContext(Dispatchers.Main) {
                         queue.sort(sorting)
+                        player.applyQueueOrder(queue.itemIds)
                         getSharedPreferences("playback", MODE_PRIVATE).edit()
                             .putString("sorting", sorting.name).apply()
                     }
@@ -132,35 +148,34 @@ class PlayerService : Service() {
                 }
                 post("/next") {
                     withContext(Dispatchers.Main) {
-                        if (queue.hasNext) { queue.next(); playCurrent() }
+                        if (queue.hasNext) { player.seekToNextMediaItem(); player.play() }
                     }
                     call.respondText("OK")
                 }
                 post("/previous") {
                     withContext(Dispatchers.Main) {
-                        if (queue.hasPrevious) { queue.previous(); playCurrent() }
+                        if (queue.hasPrevious) { player.seekToPreviousMediaItem(); player.play() }
                     }
                     call.respondText("OK")
                 }
                 post("/play") {
                     withContext(Dispatchers.Main) {
-                        if (player.playerState == IMedia.State.Ended) {
-                            player.stop()
-                            resetDebugInfo()
-                        }
+                        lastResume = playbackSnapshot()
+                        android.util.Log.i("PippyPlayer", "Resume requested: $lastResume")
+                        if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition()
                         player.play()
                     }
                     call.respondText("OK")
                 }
                 post("/skip-backward") {
                     withContext(Dispatchers.Main) {
-                        player.setTime((player.time - 10_000L).coerceIn(0L, player.length))
+                        player.seekTo((player.currentPosition - 10_000L).coerceIn(0L, player.duration))
                     }
                     call.respondText("OK")
                 }
                 post("/skip-forward") {
                     withContext(Dispatchers.Main) {
-                        player.setTime((player.time + 10_000L).coerceIn(0L, player.length))
+                        player.seekTo((player.currentPosition + 10_000L).coerceIn(0L, player.duration))
                     }
                     call.respondText("OK")
                 }
@@ -168,14 +183,11 @@ class PlayerService : Service() {
                 post("/stop") {
                     withContext(Dispatchers.Main) {
                         player.stop()
-                        player.media = null
-                        media?.release()
-                        media = null
+                        player.clearMediaItems()
+                        hasPlayed = false
                         resetDebugInfo()
-                        loading.clear()
                         updateLoadingView()
                         queue.clear()
-                        player.vlcVout.detachViews()
                         window.visibility = View.GONE
                     }
                     call.respondText("OK")
@@ -196,10 +208,35 @@ class PlayerService : Service() {
         startForeground(1, Notification.Builder(this, "playback").setContentTitle("PippyPlayer")
             .setContentText("Local controller is running").setSmallIcon(R.drawable.icon)
             .setContentIntent(open).setOngoing(true).build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        engine = LibVLC(this, arrayListOf("--no-video-title-show", "--no-audio-time-stretch", "--vout=android-display"))
-        player = MediaPlayer(engine)
-        player.volume = PlayerState.volume
+        rebufferMs = PlaybackSettings(this).networkCacheMs
+        // Keep decoder prewarming disabled; only compressed samples are preloaded.
+        val renderers = DefaultRenderersFactory(this)
+            .setMediaCodecSelector { mime, secure, tunneling ->
+                MediaCodecSelector.DEFAULT.getDecoderInfos(mime, secure, tunneling)
+                    .filter { !mime.startsWith("video/") || it.hardwareAccelerated }
+            }
+        val dataSource = DefaultDataSource.Factory(this).setTransferListener(object : TransferListener {
+            override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+            override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+            override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
+            override fun onBytesTransferred(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean, bytesTransferred: Int) {
+                if (isNetwork) networkBytes.addAndGet(bytesTransferred.toLong())
+            }
+        })
+        player = ExoPlayer.Builder(this, renderers)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
+            .setLoadControl(PipLoadControl(rebufferMs))
+            .build()
+        player.preloadConfiguration = ExoPlayer.PreloadConfiguration(3_000_000L)
+        player.setAudioAttributes(AudioAttributes.DEFAULT, false)
+        player.setVideoChangeFrameRateStrategy(C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF)
+        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+            .setMaxVideoSize(1280, 720)
+            .setMaxVideoFrameRate(30)
+            .build()
+        player.volume = PlayerState.volume / 100f
         videoSurface = SurfaceView(this)
+        player.setVideoSurfaceView(videoSurface)
         debugView = TextView(this).apply {
             setTextColor(android.graphics.Color.WHITE)
             setBackgroundColor(0xCC101820.toInt())
@@ -237,62 +274,44 @@ class PlayerService : Service() {
             PixelFormat.OPAQUE)
         setLayout()
         manager.addView(window, layout)
-        player.setEventListener { event ->
-            when (event.type) {
-                MediaPlayer.Event.Opening -> loading.start()
-                MediaPlayer.Event.Buffering -> loading.buffering(event.buffering)
-                MediaPlayer.Event.Playing -> {
-                    player.volume = PlayerState.volume
-                    loading.playing()
-                }
-                MediaPlayer.Event.Paused -> loading.pause()
-                MediaPlayer.Event.Stopped, MediaPlayer.Event.EndReached,
-                MediaPlayer.Event.EncounteredError -> loading.clear()
+        player.addListener(object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (mediaItem != null) queue.select(queue.itemIds.indexOf(mediaItem.mediaId))
+                hasPlayed = player.isPlaying
+                resetDebugInfo()
             }
-            updateLoadingView()
-            if (event.type == MediaPlayer.Event.EndReached) {
-                main.post {
-                    if (player.playerState == IMedia.State.Ended && queue.hasNext) {
-                        queue.next()
-                        playCurrent()
-                    }
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) hasPlayed = true
+            }
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    aspect = videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
+                    updateWindow()
                 }
             }
-        }
+            override fun onEvents(player: Player, events: Player.Events) { updateLoadingView() }
+        })
+        player.addAnalyticsListener(object : AnalyticsListener {
+            override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, name: String,
+                initializedTimestampMs: Long, initializationDurationMs: Long) {
+                decoderName = name
+                previousSample = null
+            }
+            override fun onVideoDecoderReleased(eventTime: AnalyticsListener.EventTime, name: String) {
+                decoderName = null
+                previousSample = null
+            }
+        })
         setDebugEnabled(getSharedPreferences("playback", MODE_PRIVATE).getBoolean("debugEnabled", false))
         server.start(wait = false)
         PlayerState.controllerPort = runBlocking { server.engine.resolvedConnectors().single().port }
         PlayerState.running = true
     }
 
-    private fun attachVideoSurface() {
-        player.vlcVout.setVideoView(videoSurface)
-        player.vlcVout.attachViews { _, width, height, visibleWidth, visibleHeight, sarNum, sarDen ->
-            // Zero dimensions signal surface reset; resize on the next video layout.
-            if (width > 0 && height > 0) {
-                aspect = visibleWidth.toFloat() * sarNum / (visibleHeight * sarDen)
-                updateWindow()
-            }
-        }
-    }
-
-    private fun playCurrent() {
-        val item = queue.current
-        player.stop()
-        player.vlcVout.detachViews()
-        attachVideoSurface()
+    private fun loadQueue() {
         window.visibility = View.VISIBLE
-        media?.release()
-        activeNetworkCacheMs = PlaybackSettings(this).networkCacheMs
-        media = Media(engine, item.uri.toUri()).apply {
-            addOption(":network-caching=$activeNetworkCacheMs")
-            setHWDecoderEnabled(true, false)
-            addOption(":mediacodec-dr")
-        }
-        resetDebugInfo()
-        player.media = media
-        loading.start()
-        updateLoadingView()
+        player.setMediaItems(queue.mediaItems(), queue.index, 0L)
+        player.prepare()
         player.play()
     }
 
@@ -314,7 +333,6 @@ class PlayerService : Service() {
     private fun updateWindow() {
         setLayout()
         manager.updateViewLayout(window, layout)
-        player.vlcVout.setWindowSize(layout.width, layout.height)
     }
     private fun setDebugEnabled(enabled: Boolean) {
         PlayerState.debugEnabled = enabled
@@ -327,43 +345,48 @@ class PlayerService : Service() {
 
     private fun resetDebugInfo() {
         previousSample = null
-        debugText = if (media == null) "No media loaded" else "Waiting for playback statistics…"
+        debugText = if (player.mediaItemCount == 0) "No media loaded" else "Waiting for playback statistics…"
         debugView.text = debugText
     }
 
     private fun updateDebugInfo() {
-        val stats = media?.stats
-        val sample = stats?.let {
-            PlaybackSample(SystemClock.elapsedRealtime(), it.displayedPictures, it.decodedVideo, it.readBytes)
+        val counters = player.videoDecoderCounters
+        counters?.ensureUpdated()
+        val sample = counters?.let {
+            PlaybackSample(SystemClock.elapsedRealtime(), it.renderedOutputBufferCount, it.queuedInputBufferCount, networkBytes.get())
         }
         val previous = previousSample
         val rates = if (sample != null && previous != null && sample.timeMs > previous.timeMs)
             sample.ratesSince(previous) else null
         previousSample = sample
         fun number(value: Double?) = if (value == null) "—" else String.format(Locale.US, "%.1f", value)
-        val track = player.currentVideoTrack
-        val sourceFps = if (track != null && track.frameRateDen > 0)
-            track.frameRateNum.toDouble() / track.frameRateDen else null
-        val state = when (player.playerState) {
-            IMedia.State.NothingSpecial -> "Idle"
-            IMedia.State.Opening -> "Opening"
-            IMedia.State.Playing -> "Playing"
-            IMedia.State.Paused -> "Paused"
-            IMedia.State.Stopped -> "Stopped"
-            IMedia.State.Ended -> "Ended"
-            IMedia.State.Error -> "Playback error"
-            else -> player.playerState.toString()
-        }
+        val track = player.videoFormat
+        val sourceFps = track?.frameRate?.takeIf { it > 0 }?.toDouble()
         debugText = listOf(
-            "$state · ${player.time / 1000}s · Hardware decoding requested",
-            "FPS shown ${number(rates?.displayedFps)} / decoded ${number(rates?.decodedFps)} / source ${number(sourceFps)}",
-            "Media input ${number(rates?.megabitsPerSecond)} Mbps · Dropped ${stats?.lostPictures ?: "—"}",
-            "Last buffering progress ${number(loading.percent?.toDouble())}%",
-            if (track == null) "Video format —" else "${track.width}×${track.height} · ${track.codec}",
-            "Network cache target: ${activeNetworkCacheMs ?: "—"} ms · Occupancy: unavailable"
+            playbackSnapshot(),
+            "Hardware video decoder: ${decoderName ?: "—"}",
+            "FPS shown ${number(rates?.displayedFps)} / queued ${number(rates?.decodedFps)} / source ${number(sourceFps)}",
+            "Network input (including preload): ${number(rates?.megabitsPerSecond)} Mbps · Dropped ${counters?.droppedBufferCount ?: "—"}",
+            if (track == null) "Video format —" else "${track.width}×${track.height} · ${track.sampleMimeType}",
+            "Rebuffer threshold: $rebufferMs ms · Next-item preload: 3000 ms · Sample buffer target: 16 MiB",
+            "Before last Resume: $lastResume"
         ).joinToString("\n")
         debugView.text = debugText
     }
+
+    private fun playbackState(): String = when {
+        player.playerError != null -> "Error"
+        player.playbackState == Player.STATE_ENDED -> "Ended"
+        player.playbackState == Player.STATE_IDLE -> "Stopped"
+        !player.playWhenReady -> "Paused"
+        player.playbackState == Player.STATE_BUFFERING -> "Buffering"
+        player.isPlaying -> "Playing"
+        else -> "Suppressed"
+    }
+
+    private fun playbackSnapshot() = "${playbackState()} · ${player.currentPosition / 1000}s · " +
+        "Buffered ${player.totalBufferedDuration} ms · playWhenReady=${player.playWhenReady} · " +
+        "suppression=${player.playbackSuppressionReason} · rendered=${player.videoDecoderCounters?.renderedOutputBufferCount}"
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.hasExtra("debugEnabled")) setDebugEnabled(intent.getBooleanExtra("debugEnabled", false))
@@ -373,11 +396,8 @@ class PlayerService : Service() {
         main.removeCallbacksAndMessages(null)
         server.stop(0, 0)
         player.stop()
-        player.vlcVout.detachViews()
         manager.removeView(window)
         player.release()
-        media?.release()
-        engine.release()
         PlayerState.running = false
         super.onDestroy()
     }

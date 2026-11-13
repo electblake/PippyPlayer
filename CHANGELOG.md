@@ -10,10 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added loading and buffering indicators on the TV overlay and remote, independent of debug mode.
+- Added forward buffering and three-second next-video preloading with current-playback priority and sample-allocation limits.
+- Added active hardware decoder, buffered-duration, dropped-frame and pre-Resume diagnostics.
+
+### Changed
+
+- Replaced LibVLC with Media3 hardware video decoding and a persistent SurfaceView across playlist transitions.
+- Preferred smaller existing adaptive and DLNA video renditions for PiP without on-device transcoding.
+- Reduced remote polling to playlist counts and position instead of serializing every video URL on the main thread.
+- Used the saved cache setting as the rebuffer threshold, applied when the service starts.
+- Preserved the current video and position when sorting the native player playlist, including duplicate URLs.
 
 ### Fixed
 
-- Fixed the selected volume resetting between videos by reapplying it when playback started.
+- Preserved the selected volume across video changes and loading a new source.
 
 ## [0.6.0] - 2026-11-13
 

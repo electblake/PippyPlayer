@@ -7,7 +7,7 @@
 <section class="card"><fieldset><legend>Position</legend><div class="grid" id="positions"></div></fieldset>
 <div class="range"><label for="size">Size <output id="sizeValue">30%</output></label><input type="range" id="size" name="size" min="15" max="90" value="30"></div>
 <div class="range"><label for="zoom">Zoom <output id="zoomValue">1.0×</output></label><input type="range" id="zoom" name="zoom" min="1" max="3" step="0.1" value="1"></div>
-<div class="range"><label for="volume">Volume <output id="volumeValue">50%</output></label><input type="range" id="volume" name="volume" min="0" max="100" value="50"></div></section></form><section class="card"><label for="debugEnabled" style="display:flex;align-items:center;gap:10px;margin:18px 0 0"><input id="debugEnabled" type="checkbox" role="switch" style="accent-color:#9af3c5;width:20px;height:20px">Debug info on TV and remote</label><div id="debugPanel" hidden><pre id="debugInfo" style="white-space:pre-wrap;font-size:13px;overflow-wrap:anywhere"></pre><p style="font-size:13px">Media input is actual stream throughput, not your connection’s maximum speed. Reads can arrive in bursts. Buffering progress is VLC’s last buffering event, not free buffer space.</p></div></section></main>
+<div class="range"><label for="volume">Volume <output id="volumeValue">50%</output></label><input type="range" id="volume" name="volume" min="0" max="100" value="50"></div></section></form><section class="card"><label for="debugEnabled" style="display:flex;align-items:center;gap:10px;margin:18px 0 0"><input id="debugEnabled" type="checkbox" role="switch" style="accent-color:#9af3c5;width:20px;height:20px">Debug info on TV and remote</label><div id="debugPanel" hidden><pre id="debugInfo" style="white-space:pre-wrap;font-size:13px;overflow-wrap:anywhere"></pre><p style="font-size:13px">Network input includes current playback and next-video preloading, not your connection’s maximum speed. Buffered time measures playable media ahead. The decoder name identifies the active hardware video decoder.</p></div></section></main>
 <script>
 const base = location.pathname.replace(/\/$/, '');
 const form = document.querySelector('form'), status = document.querySelector('#status');
@@ -30,10 +30,10 @@ function showStatus(s){
 sorting.value=s.sorting;
 document.querySelectorAll('[data-action="skip-backward"],[data-action="skip-forward"]').forEach(b=>b.disabled=!s.seekable);
 document.querySelector('#debugEnabled').checked=s.debugEnabled;document.querySelector('#debugPanel').hidden=!s.debugEnabled;document.querySelector('#debugInfo').textContent=s.debugText;
-const current=s.queue[s.queueIndex];document.querySelector('#nowPlaying').textContent=current?`${s.queueIndex+1} / ${s.queue.length}`:'';
+document.querySelector('#nowPlaying').textContent=s.queueLength?`${s.queueIndex+1} / ${s.queueLength}`:'';
 document.querySelector('[data-action=previous]').disabled=!s.hasPrevious;document.querySelector('[data-action=next]').disabled=!s.hasNext;
 const busy=sourceLoading||(s.error===null&&s.loading);status.classList.toggle('loading',busy);status.setAttribute('aria-busy',String(busy));
-status.textContent=sourceLoading?'Loading source…':s.error!==null?s.error:s.loading?s.loadingText:s.playbackState===4?'Paused':s.playing?'Playing':s.playbackState===6?'Ended':s.playbackState===5?'Stopped':'';}
+status.textContent=sourceLoading?'Loading source…':s.error!==null?s.error:s.loading?s.loadingText:s.queueLength?s.playbackState:'';}
 document.querySelector('#debugEnabled').onchange=async event=>{const body=new URLSearchParams({enabled:String(event.target.checked)});await fetch(base+'/debug',{method:'POST',body});showStatus(await state());};
 start();
 </script></body></html>

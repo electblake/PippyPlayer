@@ -40,17 +40,17 @@ class SettingsActivity : Activity() {
         serverLabel.labelFor = server.id
         content.addView(server)
         label("Set your server once. Paste a supported Stash page URL into the remote’s video URL field and press Play.", 16f)
-        val cacheLabel = label("Network buffer cache (milliseconds)")
+        val cacheLabel = label("Resume buffer after a stall (milliseconds)")
         val cache = EditText(this).apply {
             id = View.generateViewId()
             inputType = InputType.TYPE_CLASS_NUMBER
             setSingleLine(true)
             setText(settings.networkCacheMs.toString())
-            contentDescription = "Network buffer cache in milliseconds"
+            contentDescription = "Resume buffer after a stall in milliseconds"
         }
         cacheLabel.labelFor = cache.id
         content.addView(cache)
-        label("A larger cache absorbs short network stalls but increases startup time. Changes apply when you next load a video or playlist item.", 16f)
+        label("Wait for this much buffered video after a delivery stall. Restart PippyPlayer's service to apply changes. Forward buffering targets 10–20 seconds within a 16 MiB sample budget; the next video preloads up to 3 seconds.", 16f)
         content.addView(Button(this).apply {
             text = "Save settings"
             setOnClickListener {

@@ -25,7 +25,7 @@ object MediaSource {
                     if (isPlaylist(source, connection.contentType, bytes.toString("UTF-8"))) {
                         VideoPlaylist.parse(input.reader(Charsets.UTF_8).readText(), source)
                     } else {
-                        listOf(PlaylistEntry(url, null))
+                        listOf(PlaylistEntry(url, null, mimeType = connection.contentType?.substringBefore(';')?.trim()))
                     }
                 }
                 connection.disconnect()

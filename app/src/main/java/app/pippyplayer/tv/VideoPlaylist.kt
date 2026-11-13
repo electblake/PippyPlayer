@@ -2,7 +2,7 @@ package app.pippyplayer.tv
 
 import java.net.URI
 
-data class PlaylistEntry(val uri: String, val title: String?, val durationSeconds: Double? = null)
+data class PlaylistEntry(val uri: String, val title: String?, val durationSeconds: Double? = null, val mimeType: String? = null)
 
 enum class PlaylistSort { DEFAULT, LENGTH_SHORTEST, LENGTH_LONGEST, NAME, RANDOM }
 
@@ -11,7 +11,7 @@ object VideoPlaylist {
         val lines = text.removePrefix("\uFEFF").lineSequence().map(String::trim).toList()
         // HLS manifests describe one stream, not a queue of their media segments.
         if (lines.any { it.startsWith("#EXT-X-") }) {
-            return listOf(PlaylistEntry(source.toString(), null))
+            return listOf(PlaylistEntry(source.toString(), null, mimeType = "application/x-mpegURL"))
         }
         var title: String? = null
         return buildList {
@@ -32,13 +32,15 @@ class PlaybackQueue {
     private var original: List<IndexedValue<PlaylistEntry>> = emptyList()
     private var ordered: List<IndexedValue<PlaylistEntry>> = emptyList()
     val entries get() = ordered.map { it.value }
+    val itemIds get() = ordered.map { it.index.toString() }
+    val count get() = ordered.size
     var sorting = PlaylistSort.DEFAULT
         private set
     var index = 0
         private set
-    val current get() = entries[index]
+    val current get() = ordered[index].value
     val hasPrevious get() = index > 0
-    val hasNext get() = index + 1 < entries.size
+    val hasNext get() = index + 1 < ordered.size
 
     private fun sorted(sort: PlaylistSort) = when (sort) {
         PlaylistSort.RANDOM -> original.shuffled()
@@ -63,5 +65,6 @@ class PlaybackQueue {
     }
     fun next() { index++ }
     fun previous() { index-- }
+    fun select(index: Int) { this.index = index }
     fun clear() { original = emptyList(); ordered = emptyList(); index = 0 }
 }

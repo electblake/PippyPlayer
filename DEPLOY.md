@@ -4,7 +4,7 @@ The first GitHub release, `0.1.0`, distributes the working development-signed AP
 
 PippyPlayer is distributed as a self-signed APK through a public GitHub Release and Downloader by AFTVnews. No app store is involved. From version 0.5.0, the Android app can check GitHub releases and download updates for installation through Android’s package installer. This follows the [StashAppAndroidTV installation method](https://github.com/damontecres/StashAppAndroidTV#installation), using PippyPlayer's own download URL and optional numeric code.
 
-Compatibility: Android TV / Google TV running Android 10 (API 29) or newer, with permission to display overlays. The universal APK includes the bundled `assets/controller.html` web remote and LibVLC native libraries for `armeabi-v7a`, `arm64-v8a`, `x86`, and `x86_64`. Fire TV compatibility remains unverified; Downloader availability does not establish compatibility.
+Compatibility: Android TV / Google TV running Android 10 (API 29) or newer, with permission to display overlays. The universal APK includes the bundled `assets/controller.html` web remote and Media3 playback using the device's hardware video decoders. Fire TV compatibility remains unverified; Downloader availability does not establish compatibility.
 
 ## Prerequisites
 

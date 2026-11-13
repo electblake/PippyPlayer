@@ -4,12 +4,11 @@ internal data class PlaybackSample(
     val timeMs: Long,
     val displayed: Int,
     val decoded: Int,
-    val bytes: Int
+    val bytes: Long
 ) {
     fun ratesSince(previous: PlaybackSample): PlaybackRates {
         val seconds = (timeMs - previous.timeMs) / 1000.0
-        // VLC 3 exposes cumulative byte counts as 32-bit integers; subtraction wraps too.
-        val transferred = (bytes - previous.bytes).toUInt().toLong()
+        val transferred = bytes - previous.bytes
         return PlaybackRates(
             (displayed - previous.displayed) / seconds,
             (decoded - previous.decoded) / seconds,
