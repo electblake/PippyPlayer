@@ -4,7 +4,7 @@ import java.net.URI
 
 data class PlaylistEntry(val uri: String, val title: String?, val durationSeconds: Double? = null)
 
-enum class PlaylistSort { DEFAULT, LENGTH_SHORTEST, LENGTH_LONGEST, NAME }
+enum class PlaylistSort { DEFAULT, LENGTH_SHORTEST, LENGTH_LONGEST, NAME, RANDOM }
 
 object VideoPlaylist {
     fun parse(text: String, source: URI): List<PlaylistEntry> {
@@ -41,6 +41,7 @@ class PlaybackQueue {
     val hasNext get() = index + 1 < entries.size
 
     private fun sorted(sort: PlaylistSort) = when (sort) {
+        PlaylistSort.RANDOM -> original.shuffled()
         PlaylistSort.DEFAULT -> original
         PlaylistSort.LENGTH_SHORTEST -> original.sortedBy { it.value.durationSeconds!! }
         PlaylistSort.LENGTH_LONGEST -> original.sortedByDescending { it.value.durationSeconds!! }

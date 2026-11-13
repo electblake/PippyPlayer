@@ -5,6 +5,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class VideoPlaylistTest {
+    @Test fun randomSortPreservesEntriesCurrentOccurrenceAndDefaultOrder() {
+        val duplicate = PlaylistEntry("same", "Same")
+        val items = listOf(duplicate, PlaylistEntry("other", "Other"), duplicate)
+        val queue = PlaybackQueue()
+        queue.load(items)
+        queue.next()
+        queue.next()
+        queue.sort(PlaylistSort.RANDOM)
+        assertEquals(items.groupingBy { it }.eachCount(), queue.entries.groupingBy { it }.eachCount())
+        assertEquals(duplicate, queue.current)
+        queue.sort(PlaylistSort.DEFAULT)
+        assertEquals(items, queue.entries)
+        assertEquals(2, queue.index)
+        queue.sort(PlaylistSort.RANDOM)
+        queue.clear()
+        queue.load(items)
+        assertEquals(PlaylistSort.RANDOM, queue.sorting)
+        assertEquals(items.groupingBy { it }.eachCount(), queue.entries.groupingBy { it }.eachCount())
+        assertEquals(0, queue.index)
+    }
+
     @Test fun sortingPreservesCurrentOccurrenceAndRestoresOriginalOrder() {
         val duplicate = PlaylistEntry("same", "Bravo", 60.0)
         val items = listOf(duplicate, PlaylistEntry("long", "alpha", 3600.0), duplicate,

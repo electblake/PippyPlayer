@@ -9,3 +9,9 @@ Set the **UPnP server URL** once under **Playback settings** in the Android app.
 Supported page paths are `/scenes/{id}` and `/{collection}/{id}` with an optional `/scenes` suffix, where collection is `performers`, `studios`, `tags`, `movies`, or `groups`, and IDs are numeric. Trailing slashes are accepted. The hostname is not hardcoded. Page query parameters and fragments are not forwarded: the mapped object ID is the path without its trailing `/scenes`, and the configured server must support that object ID under `/ctl`. Direct stream, playlist, and explicit `upnp://` URLs continue to work unchanged.
 
 The last loaded source is retained on Android and restored in the remote after reloads, Stop, and app restarts. Press Play to load it again.
+
+Bare paths such as `tags/17279/scenes` and `/performers/5575/scenes` can also be entered directly in Video URL. Only the path identifies the DLNA collection.
+
+## Sorting
+
+Sorting applies immediately and is remembered. Choose Default, Length (Shortest), Length (Longest), Name, or Random. Random shuffles the playlist each time it is applied or a new playlist is loaded. Changing sorting keeps the current video playing; Default restores the original server order.

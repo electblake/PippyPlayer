@@ -5,6 +5,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class MediaSourceTest {
+    @Test fun mapsProvidedTagUrlUsingOnlyItsPath() {
+        val resolved = MediaSource.resolveUrl(
+            "https://stash.shoji.me/tags/17279/scenes?sortby=updated_at&sortdir=desc",
+            "upnp://media.example.test:1338")
+        assertEquals("tags/17279", DlnaAddress.parse(resolved).objectId)
+    }
+
+    @Test fun performerAndTagUrisDoNotRequireAHostname() {
+        for (path in listOf("performers/5575", "tags/17279")) {
+            for (prefix in listOf("", "/", "https://unrelated.example/", "http://192.0.2.1:9999/")) {
+                for (suffix in listOf("", "/scenes", "/scenes/?sortby=updated_at&sortdir=desc")) {
+                    val resolved = MediaSource.resolveUrl("$prefix$path$suffix", "upnp://media.example.test:1338")
+                    assertEquals(DlnaAddress(URI("http://media.example.test:1338/ctl"), path), DlnaAddress.parse(resolved))
+                }
+            }
+        }
+    }
+
     @Test fun mapsStashCollectionPagesThroughConfiguredServer() {
         for (collection in listOf("performers", "studios", "tags", "movies", "groups")) {
             val resolved = MediaSource.resolveUrl("https://stash.example.test/$collection/42/scenes/?sortby=date", "http://media.example.test:1338")

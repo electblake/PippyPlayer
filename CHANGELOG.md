@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a remembered Random sorting option for playlist playback.
+- Added direct performer and tag URI input on Play, including bare paths, using the configured DLNA server without matching the source hostname or query parameters.
+
 ## [0.5.0] - 2026-11-10
 
 ### Added

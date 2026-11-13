@@ -37,7 +37,7 @@ object MediaSource {
 
     internal fun resolveUrl(url: String, upnpServer: String): String {
         val source = URI(url)
-        if (source.scheme.lowercase() !in setOf("http", "https")) return url
+        if (source.scheme != null && source.scheme.lowercase() !in setOf("http", "https")) return url
         val path = source.path.trim('/')
         if (!Regex("(?:scenes/[0-9]+|(?:performers|studios|tags|movies|groups)/[0-9]+(?:/scenes)?)").matches(path)) return url
         val objectId = path.removeSuffix("/scenes")
