@@ -21,7 +21,7 @@ class PlaybackSettingsTest {
         }
     }
 
-    @Test fun playersPersistIndependentSettingsAndShareOnlyHistory() {
+    @Test fun playersPersistIndependentSettingsAndShareServerAndHistory() {
         val first = PlaybackSettings(context)
         assertEquals(listOf("1"), first.playerIds)
         val id = first.addPlayer()
@@ -31,11 +31,13 @@ class PlaybackSettingsTest {
         first.saveLayout(Position.TOP_LEFT, 45, 1.5f)
         first.sorting = PlaylistSort.NAME
         first.repeatOne = true
-        first.save("http://first.test", 5000)
+        first.upnpServer = "http://first.test"
+        first.saveNetworkCacheMs(5000)
         first.recordPlayedUrl("https://first.test/video")
         second.volume = 78
         second.saveLayout(Position.BOTTOM_LEFT, 25, 2f)
-        second.save("http://second.test", 2000)
+        second.upnpServer = "http://second.test"
+        second.saveNetworkCacheMs(2000)
         second.recordPlayedUrl("https://second.test/video")
         second.nameRecentUrl("https://first.test/video", "Shared name")
         val reopened = PlaybackSettings(context, "1")
@@ -45,7 +47,9 @@ class PlaybackSettingsTest {
         assertEquals(Position.TOP_LEFT, reopened.position)
         assertEquals(PlaylistSort.NAME, reopened.sorting)
         assertTrue(reopened.repeatOne)
-        assertEquals("http://first.test", reopened.upnpServer)
+        assertEquals("http://second.test", reopened.upnpServer)
+        assertEquals(reopened.upnpServer, second.upnpServer)
+        assertEquals(2000, second.networkCacheMs)
         assertEquals(5000, reopened.networkCacheMs)
         assertEquals("https://first.test/video", reopened.lastPlayedUrl)
         assertEquals("https://second.test/video", second.lastPlayedUrl)
@@ -71,7 +75,7 @@ class PlaybackSettingsTest {
         assertEquals("upnp://saved-server.test:9999/ctl?ObjectID=performers/1",
             MediaSource.resolveUrl(settings.lastPlayedUrl, settings.upnpServer))
         assertEquals(listOf(settings.lastPlayedUrl), settings.recentUrls)
-        assertEquals("", PlaybackSettings(context, settings.addPlayer()).upnpServer)
+        assertEquals(settings.upnpServer, PlaybackSettings(context, settings.addPlayer()).upnpServer)
     }
 
     @Test fun upgradeThrough012RestoresMissingServerWithoutOverwritingNewPlayerSettings() {
@@ -88,11 +92,12 @@ class PlaybackSettingsTest {
         assertEquals(7000, settings.networkCacheMs)
         assertEquals(81, settings.volume)
         assertEquals(45, settings.size)
-        assertEquals("http://second.test", PlaybackSettings(context, "2").upnpServer)
-        settings.save("http://changed.test", 2000)
+        assertEquals("http://saved-server.test:9999", PlaybackSettings(context, "2").upnpServer)
+        settings.upnpServer = "http://changed.test"
+        settings.saveNetworkCacheMs(2000)
         assertEquals("http://changed.test", PlaybackSettings(context).upnpServer)
         settings.removePlayer("1")
-        assertEquals("", PlaybackSettings(context).upnpServer)
+        assertEquals("http://changed.test", PlaybackSettings(context).upnpServer)
         assertEquals(listOf("2"), PlaybackSettings(context).playerIds)
     }
 
@@ -101,7 +106,10 @@ class PlaybackSettingsTest {
             .putString("upnpServer", "http://old.test").commit()
         context.getSharedPreferences("player_1", Context.MODE_PRIVATE).edit()
             .putString("upnpServer", "http://new.test").commit()
+        assertEquals("http://new.test", PlaybackSettings(context, "2").upnpServer)
         assertEquals("http://new.test", PlaybackSettings(context).upnpServer)
+        PlaybackSettings(context).upnpServer = "http://latest.test"
+        assertEquals("http://latest.test", PlaybackSettings(context, "2").upnpServer)
     }
 
     @Test fun deletionKeepsOtherPlayersAndHistoryAndAllowsAnEmptyCollection() {
@@ -152,7 +160,8 @@ class PlaybackSettingsTest {
         PlaybackSettings(context).volume = 23
         val reopened = PlaybackSettings(context)
         assertEquals(23, reopened.volume)
-        reopened.save("http://server.test", 5000)
+        reopened.upnpServer = "http://server.test"
+        reopened.saveNetworkCacheMs(5000)
         reopened.recordPlayedUrl("https://media.test/video.mp4")
         assertEquals(23, PlaybackSettings(context).volume)
         reopened.volume = 0
@@ -163,7 +172,8 @@ class PlaybackSettingsTest {
         val settings = PlaybackSettings(context)
         val first = "https://media.test/video?q=one&name=\"A\"#片"
         val second = "performer:Example"
-        settings.save("http://server.test", 5000)
+        settings.upnpServer = "http://server.test"
+        settings.saveNetworkCacheMs(5000)
         settings.recordPlayedUrl(first)
         settings.recordPlayedUrl(second)
         assertEquals(listOf(second, first), PlaybackSettings(context).recentUrls)
@@ -174,7 +184,8 @@ class PlaybackSettingsTest {
         assertEquals(first, reopened.lastPlayedUrl)
         assertEquals("http://server.test", reopened.upnpServer)
         assertEquals(5000, reopened.networkCacheMs)
-        reopened.save("http://new-server.test", 3000)
+        reopened.upnpServer = "http://new-server.test"
+        reopened.saveNetworkCacheMs(3000)
         assertEquals(listOf(first, second), PlaybackSettings(context).recentUrls)
     }
 }

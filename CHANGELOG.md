@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-13
+
+### Fixed
+
+- Restored the UPnP server URL as one shared setting for every player, fixing Stash source loading on Player 2 and new players.
+- Preserved the server entered in Player 1 during 0.12.0/0.12.1 when restoring shared server storage. Retained the original shared server when no replacement was entered, and retained a configured remaining player's server when it was the only saved address.
+- Separated Save shared server from per-player buffer settings; changing or deleting players no longer changed or removed the shared server.
+- Tested both players loading Stash performer sources against the same real local HTTP/SOAP endpoint, plus settings-screen and upgrade regressions.
+
 ## [0.12.1] - 2026-11-13
 
 ### Fixed

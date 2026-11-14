@@ -10,9 +10,24 @@ class PlaybackSettings(private val context: Context, playerId: String = "1") {
     private val preferences = context.getSharedPreferences("player_$playerId", Context.MODE_PRIVATE)
 
     init {
+        if (!shared.getBoolean("sharedUpnpServerRestored", false)) {
+            val firstPlayerServer = context.getSharedPreferences("player_1", Context.MODE_PRIVATE)
+                .getString("upnpServer", "")!!
+            shared.edit(commit = true) {
+                if ("1" in playerIds && firstPlayerServer.isNotEmpty()) {
+                    putString("upnpServer", firstPlayerServer)
+                } else if (shared.getString("upnpServer", "")!!.isEmpty()) {
+                    val configuredServer = playerIds.map {
+                        context.getSharedPreferences("player_$it", Context.MODE_PRIVATE).getString("upnpServer", "")!!
+                    }.firstOrNull { it.isNotEmpty() }
+                    if (configuredServer != null) putString("upnpServer", configuredServer)
+                }
+                putBoolean("sharedUpnpServerRestored", true)
+            }
+        }
         if (playerId == "1" && "1" in playerIds && !shared.getBoolean("player1SettingsMigrated", false)) {
             preferences.edit(commit = true) {
-                for (key in listOf("upnpServer", "lastPlayedUrl", "sorting")) {
+                for (key in listOf("lastPlayedUrl", "sorting")) {
                     if (shared.contains(key) && !preferences.contains(key)) putString(key, shared.getString(key, null))
                 }
                 for (key in listOf("networkCacheMs", "volume")) {
@@ -54,7 +69,9 @@ class PlaybackSettings(private val context: Context, playerId: String = "1") {
         preferences.edit { putString("position", position.name); putInt("size", size); putFloat("zoom", zoom) }
     }
 
-    val upnpServer: String get() = preferences.getString("upnpServer", "")!!
+    var upnpServer: String
+        get() = shared.getString("upnpServer", "")!!
+        set(value) { shared.edit { putString("upnpServer", value) } }
     val networkCacheMs: Int get() = preferences.getInt("networkCacheMs", 3000)
     var volume: Int
         get() = preferences.getInt("volume", 50)
@@ -82,9 +99,8 @@ class PlaybackSettings(private val context: Context, playerId: String = "1") {
         shared.edit { putString("recentUrls", JSONArray(urls).toString()) }
     }
 
-    fun save(upnpServer: String, networkCacheMs: Int) {
+    fun saveNetworkCacheMs(networkCacheMs: Int) {
         preferences.edit {
-            putString("upnpServer", upnpServer)
             putInt("networkCacheMs", networkCacheMs)
         }
     }

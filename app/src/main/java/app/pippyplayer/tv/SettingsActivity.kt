@@ -33,14 +33,7 @@ class SettingsActivity : Activity() {
             content.addView(this)
         }
         label("Playback settings", 28f)
-        if (playerIds.isEmpty()) label("Add a player from the remote to configure playback settings.", 16f)
-        val playerSelector = Spinner(this).apply {
-            contentDescription = "Player"
-            adapter = ArrayAdapter(this@SettingsActivity, android.R.layout.simple_spinner_dropdown_item,
-                playerIds.map { "Player $it" })
-        }
-        content.addView(playerSelector)
-        val serverLabel = label("UPnP server URL")
+        val serverLabel = label("UPnP server URL (shared by all players)")
         val server = EditText(this).apply {
             id = View.generateViewId()
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
@@ -50,7 +43,22 @@ class SettingsActivity : Activity() {
         }
         serverLabel.labelFor = server.id
         content.addView(server)
-        label("Set this player’s server. Paste a supported Stash page URL into the remote’s video URL field and press Play.", 16f)
+        label("Set the server once for all players. Paste a supported Stash page URL into the remote’s video URL field and press Play.", 16f)
+        content.addView(Button(this).apply {
+            text = "Save shared server"
+            setOnClickListener {
+                settings.upnpServer = server.text.toString().trim()
+                finish()
+            }
+        })
+        label("Player buffer settings", 24f)
+        if (playerIds.isEmpty()) label("Add a player from the remote to configure playback settings.", 16f)
+        val playerSelector = Spinner(this).apply {
+            contentDescription = "Player"
+            adapter = ArrayAdapter(this@SettingsActivity, android.R.layout.simple_spinner_dropdown_item,
+                playerIds.map { "Player $it" })
+        }
+        content.addView(playerSelector)
         val cacheLabel = label("Resume buffer after a stall (milliseconds)")
         val cache = EditText(this).apply {
             id = View.generateViewId()
@@ -65,16 +73,15 @@ class SettingsActivity : Activity() {
         playerSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 settings = PlaybackSettings(this@SettingsActivity, playerIds[position])
-                server.setText(settings.upnpServer)
                 cache.setText(settings.networkCacheMs.toString())
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
         content.addView(Button(this).apply {
-            text = "Save settings"
+            text = "Save player buffer"
             isEnabled = playerIds.isNotEmpty()
             setOnClickListener {
-                settings.save(server.text.toString().trim(), cache.text.toString().toInt())
+                settings.saveNetworkCacheMs(cache.text.toString().toInt())
                 finish()
             }
         })
