@@ -22,6 +22,8 @@ The remote opens on **Player 1**. Select **+** beside the player tabs to add ano
 
 Recent URLs and their display names are shared. The debug checkbox below the player controls applies to all players. Player settings and the player list survive a service restart, but videos must be started again. On the TV’s **Playback settings** screen, choose a player to configure its UPnP server and buffer threshold. Restart the service to apply buffer changes.
 
-The multi-player settings use new per-player storage. After upgrading from the single-player version, configure Player 1 again; recent URL history is retained. The number of simultaneous videos supported depends on the TV’s hardware decoders.
+Version 0.12.1 restores the saved single-player settings into Player 1 automatically, including after an upgrade through 0.12.0. Settings already changed in Player 1 are preserved. Install the update over the existing app without uninstalling or clearing app data; recent URL history is retained. The number of simultaneous videos supported depends on the TV’s hardware decoders.
 
 Select **Delete player** inside a player’s controls to stop and remove that player and its saved settings. Shared recent URLs are retained. You can delete every player and use **+** to start again.
+
+Source-loading errors remain visible in the player controls until the next source attempt, including through remote reloads. The error text is selectable so you can copy the original failure details.

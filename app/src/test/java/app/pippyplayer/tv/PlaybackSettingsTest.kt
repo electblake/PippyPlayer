@@ -56,6 +56,54 @@ class PlaybackSettingsTest {
         assertEquals("Shared name", reopened.recentUrlNames.getString("https://first.test/video"))
     }
 
+    @Test fun upgradeMigratesExistingSinglePlayerSettingsWithoutReentry() {
+        context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit()
+            .putString("upnpServer", "http://saved-server.test:9999")
+            .putInt("networkCacheMs", 7000).putInt("volume", 23)
+            .putString("sorting", "NAME").putString("lastPlayedUrl", "https://stash.test/performers/1")
+            .putString("recentUrls", "[\"https://stash.test/performers/1\"]").commit()
+        val settings = PlaybackSettings(context)
+        assertEquals("http://saved-server.test:9999", settings.upnpServer)
+        assertEquals(7000, settings.networkCacheMs)
+        assertEquals(23, settings.volume)
+        assertEquals(PlaylistSort.NAME, settings.sorting)
+        assertEquals("https://stash.test/performers/1", settings.lastPlayedUrl)
+        assertEquals("upnp://saved-server.test:9999/ctl?ObjectID=performers/1",
+            MediaSource.resolveUrl(settings.lastPlayedUrl, settings.upnpServer))
+        assertEquals(listOf(settings.lastPlayedUrl), settings.recentUrls)
+        assertEquals("", PlaybackSettings(context, settings.addPlayer()).upnpServer)
+    }
+
+    @Test fun upgradeThrough012RestoresMissingServerWithoutOverwritingNewPlayerSettings() {
+        context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit()
+            .putString("players", "[\"1\",\"2\"]").putInt("nextPlayerId", 3)
+            .putString("upnpServer", "http://saved-server.test:9999")
+            .putInt("volume", 23).putInt("networkCacheMs", 7000).commit()
+        context.getSharedPreferences("player_1", Context.MODE_PRIVATE).edit()
+            .putInt("volume", 81).putInt("size", 45).commit()
+        context.getSharedPreferences("player_2", Context.MODE_PRIVATE).edit()
+            .putString("upnpServer", "http://second.test").commit()
+        val settings = PlaybackSettings(context)
+        assertEquals("http://saved-server.test:9999", settings.upnpServer)
+        assertEquals(7000, settings.networkCacheMs)
+        assertEquals(81, settings.volume)
+        assertEquals(45, settings.size)
+        assertEquals("http://second.test", PlaybackSettings(context, "2").upnpServer)
+        settings.save("http://changed.test", 2000)
+        assertEquals("http://changed.test", PlaybackSettings(context).upnpServer)
+        settings.removePlayer("1")
+        assertEquals("", PlaybackSettings(context).upnpServer)
+        assertEquals(listOf("2"), PlaybackSettings(context).playerIds)
+    }
+
+    @Test fun upgradeKeepsAnAlreadyReenteredServer() {
+        context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit()
+            .putString("upnpServer", "http://old.test").commit()
+        context.getSharedPreferences("player_1", Context.MODE_PRIVATE).edit()
+            .putString("upnpServer", "http://new.test").commit()
+        assertEquals("http://new.test", PlaybackSettings(context).upnpServer)
+    }
+
     @Test fun deletionKeepsOtherPlayersAndHistoryAndAllowsAnEmptyCollection() {
         val first = PlaybackSettings(context)
         val secondId = first.addPlayer()

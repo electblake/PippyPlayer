@@ -119,7 +119,10 @@ class PlayerService : Service() {
                         val fields = call.receiveParameters()
                         val url = fields.getAll("url")!!.single()
                         val settings = PlaybackSettings(this@PlayerService, call.parameters["playerId"]!!)
-                        val entries = withContext(Dispatchers.IO) { MediaSource.load(url, settings.upnpServer) }
+                        val request = withContext(Dispatchers.Main) {
+                            players.getValue(call.parameters["playerId"]!!).sourceRequest
+                        }
+                        val entries = withContext(Dispatchers.IO) { request.load(url, settings.upnpServer) }
                         withContext(Dispatchers.Main) {
                             players.getValue(call.parameters["playerId"]!!).run {
                                 queue.load(entries)
@@ -249,6 +252,7 @@ class PlayerService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     private inner class PlayerRuntime(val id: String) {
+        val sourceRequest = SourceRequest()
         val settings = PlaybackSettings(this@PlayerService, id)
         var size = settings.size
         var zoom = settings.zoom
@@ -397,7 +401,7 @@ class PlayerService : Service() {
                 .put("bufferedMs", player.totalBufferedDuration)
                 .put("decoder", decoderName ?: JSONObject.NULL)
                 .put("seekable", player.isCurrentMediaItemSeekable && player.duration != C.TIME_UNSET)
-                .put("error", player.playerError?.toString() ?: JSONObject.NULL)
+                .put("error", sourceRequest.error ?: player.playerError?.toString() ?: JSONObject.NULL)
                 .put("width", layout.width).put("height", layout.height)
                 .put("debugText", debugText)
                 .put("elapsed", player.currentPosition)

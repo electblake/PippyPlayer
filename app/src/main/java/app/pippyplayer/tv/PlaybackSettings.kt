@@ -9,6 +9,20 @@ class PlaybackSettings(private val context: Context, playerId: String = "1") {
     private val shared = context.getSharedPreferences("playback", Context.MODE_PRIVATE)
     private val preferences = context.getSharedPreferences("player_$playerId", Context.MODE_PRIVATE)
 
+    init {
+        if (playerId == "1" && "1" in playerIds && !shared.getBoolean("player1SettingsMigrated", false)) {
+            preferences.edit(commit = true) {
+                for (key in listOf("upnpServer", "lastPlayedUrl", "sorting")) {
+                    if (shared.contains(key) && !preferences.contains(key)) putString(key, shared.getString(key, null))
+                }
+                for (key in listOf("networkCacheMs", "volume")) {
+                    if (shared.contains(key) && !preferences.contains(key)) putInt(key, shared.getInt(key, 0))
+                }
+            }
+            shared.edit(commit = true) { putBoolean("player1SettingsMigrated", true) }
+        }
+    }
+
     val playerIds: List<String> get() {
         val ids = JSONArray(shared.getString("players", "[\"1\"]")!!)
         return List(ids.length()) { ids.getString(it) }

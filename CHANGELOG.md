@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-13
+
+### Fixed
+
+- Migrated saved single-player UPnP server, buffer threshold, volume, sorting, and last URL into Player 1, including installations that already ran 0.12.0. Preserved settings changed since the upgrade and did not recreate deleted players.
+- Kept source-loading failures visible with their original exception details across status polling, tab changes, and remote reloads, until the next source attempt.
+- Kept failed HTTP responses readable instead of immediately replacing them with playback status, and disabled Play while a source request was running.
+- Added upgrade regression tests, a real HTTP failure test, and repeatable browser tests for persistent errors.
+
 ## [0.12.0] - 2026-11-13
 
 ### Added

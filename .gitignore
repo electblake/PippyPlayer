@@ -47,3 +47,6 @@ replay_pid*
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local browser test dependency
+/node_modules/
