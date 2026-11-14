@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-13
+
+### Added
+
+- Added a repeat-one icon button to loop the current video using Media3 repeat mode, with a distinct active highlight and accessible toggle state. Turning it off restored normal playlist progression without changing pause state, position or volume.
+
 ## [0.9.0] - 2026-11-13
 
 ### Added

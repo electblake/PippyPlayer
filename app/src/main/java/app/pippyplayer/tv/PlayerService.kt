@@ -91,6 +91,7 @@ class PlayerService : Service() {
                             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
                             .put("position", PlayerState.position.name).put("playing", player.isPlaying)
                             .put("visible", window.visibility == View.VISIBLE)
+                            .put("repeatOne", player.repeatMode == Player.REPEAT_MODE_ONE)
                             .put("playbackState", playbackState())
                             .put("loading", loading.visible).put("loadingText", loading.label)
                             .put("bufferedMs", player.totalBufferedDuration)
@@ -187,6 +188,10 @@ class PlayerService : Service() {
                     withContext(Dispatchers.Main) {
                         if (queue.count > 0) player.setWindowVisible(window, window.visibility != View.VISIBLE)
                     }
+                    call.respondText("OK")
+                }
+                post("/toggle-repeat") {
+                    withContext(Dispatchers.Main) { player.toggleRepeatOne() }
                     call.respondText("OK")
                 }
                 post("/pause") { withContext(Dispatchers.Main) { player.pause() }; call.respondText("OK") }

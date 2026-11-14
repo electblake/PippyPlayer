@@ -34,6 +34,23 @@ class PlayerPlaylistTest {
 
     @After fun releasePlayer() { player.release() }
 
+    @Test fun repeatOneLoopsCurrentItemAndCanBeDisabledWithoutChangingPlayback() {
+        player.pause()
+        player.toggleRepeatOne()
+        assertEquals(androidx.media3.common.Player.REPEAT_MODE_ONE, player.repeatMode)
+        assertEquals(2, player.currentTimeline.getNextWindowIndex(2, player.repeatMode, false))
+        assertFalse(player.playWhenReady)
+        assertEquals(12_000L, player.currentPosition)
+        assertEquals(0.23f, player.volume, 0f)
+        player.seekToPreviousMediaItem()
+        assertEquals(1, player.currentMediaItemIndex)
+        assertEquals(1, player.currentTimeline.getNextWindowIndex(1, player.repeatMode, false))
+        player.toggleRepeatOne()
+        assertEquals(androidx.media3.common.Player.REPEAT_MODE_OFF, player.repeatMode)
+        assertEquals(2, player.currentTimeline.getNextWindowIndex(1, player.repeatMode, false))
+        assertFalse(player.playWhenReady)
+    }
+
     @Test fun hidingPausesAndShowingResumesWithoutLosingPositionOrVolume() {
         val window = android.view.View(RuntimeEnvironment.getApplication())
         player.play()
