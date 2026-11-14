@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a pencil button beside each remote player tab to rename it. Names are saved per player and appear in the TV's player settings.
 - Made Position collapsible and added per-player horizontal and vertical offsets saved as percentages of the TV screen.
+- Added per-player top, right, bottom, and left cropping as percentages of the video window. Cropping preserves the video scale and works with player size, zoom, and screen offsets.
 
 ## [0.12.4] - 2026-11-13
 

@@ -75,7 +75,9 @@ class PlayerService : Service() {
                                 position = fields["position"]?.let(Position::valueOf),
                                 size = fields["size"]?.toInt(), zoom = fields["zoom"]?.toFloat(),
                                 volume = fields["volume"]?.toInt(),
-                                offsetX = fields["offsetX"]?.toInt(), offsetY = fields["offsetY"]?.toInt())
+                                offsetX = fields["offsetX"]?.toInt(), offsetY = fields["offsetY"]?.toInt(),
+                                cropTop = fields["cropTop"]?.toInt(), cropRight = fields["cropRight"]?.toInt(),
+                                cropBottom = fields["cropBottom"]?.toInt(), cropLeft = fields["cropLeft"]?.toInt())
                         }
                         call.respondText("OK")
                     }

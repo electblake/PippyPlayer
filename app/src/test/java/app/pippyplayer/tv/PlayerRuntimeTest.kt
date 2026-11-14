@@ -121,6 +121,50 @@ class PlayerRuntimeTest {
         runtime.release()
     }
 
+    @Test fun edgeCropKeepsTheFullVideoSurfaceAndScalesWithPlayerDimensions() {
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context))
+        val width = runtime.layout.width
+        val height = runtime.layout.height
+        runtime.configure(Position.BOTTOM_RIGHT, null, 1.5f, null, cropTop = -10, cropRight = -15, cropBottom = -20, cropLeft = -25)
+        val left = -WindowGeometry.percentPixels(-25, width)
+        val right = -WindowGeometry.percentPixels(-15, width)
+        val top = -WindowGeometry.percentPixels(-10, height)
+        val bottom = -WindowGeometry.percentPixels(-20, height)
+        assertEquals(width - left - right, runtime.layout.width)
+        assertEquals(height - top - bottom, runtime.layout.height)
+        assertEquals(right, runtime.layout.x)
+        assertEquals(bottom, runtime.layout.y)
+        assertEquals(width, runtime.videoSurface.layoutParams.width)
+        assertEquals(height, runtime.videoSurface.layoutParams.height)
+        assertEquals(-left.toFloat(), runtime.videoSurface.translationX)
+        assertEquals(-top.toFloat(), runtime.videoSurface.translationY)
+        assertEquals(1.5f, runtime.videoSurface.scaleX)
+
+        runtime.configure(Position.TOP_LEFT, 60, null, null)
+        runtime.aspect = 9f / 16f
+        runtime.updateWindow()
+        val (portraitWidth, portraitHeight) = WindowGeometry.dimensions(
+            runtime.resources.displayMetrics.widthPixels, runtime.resources.displayMetrics.heightPixels, 60, runtime.aspect,
+        )
+        val crop = WindowGeometry.crop(portraitWidth, portraitHeight, -10, -15, -20, -25)
+        assertEquals(crop.left, runtime.layout.x)
+        assertEquals(crop.top, runtime.layout.y)
+        assertEquals(crop.width(), runtime.layout.width)
+        assertEquals(crop.height(), runtime.layout.height)
+        assertEquals(portraitWidth, runtime.videoSurface.layoutParams.width)
+        assertEquals(portraitHeight, runtime.videoSurface.layoutParams.height)
+
+        runtime.configure(null, null, null, null, cropTop = -50, cropRight = -50, cropBottom = -50, cropLeft = -50)
+        assertEquals(1, runtime.layout.width)
+        assertEquals(1, runtime.layout.height)
+        runtime.configure(null, null, null, null, cropTop = 0, cropRight = 0, cropBottom = 0, cropLeft = 0)
+        assertEquals(portraitWidth, runtime.layout.width)
+        assertEquals(portraitHeight, runtime.layout.height)
+        assertEquals(0f, runtime.videoSurface.translationX, 0f)
+        assertEquals(0f, runtime.videoSurface.translationY, 0f)
+        runtime.release()
+    }
+
     @Test fun pauseAndHideDuringALoadRemainInEffectWhenTheSourceCompletes() = runBlocking {
         val shared = PlaybackSettings(context)
         var gate = CompletableDeferred<List<PlaylistEntry>>()

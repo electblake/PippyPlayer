@@ -126,7 +126,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         window = FrameLayout(this@PlayerRuntime).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
             keepScreenOn = true
-            addView(videoSurface, FrameLayout.LayoutParams(-1, -1))
+            addView(videoSurface, FrameLayout.LayoutParams(-1, -1, Gravity.TOP or Gravity.LEFT))
             addView(debugView, FrameLayout.LayoutParams(-1, -2))
             addView(loadingView, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
             visibility = View.GONE
@@ -176,6 +176,8 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
             .put("position", position.name).put("playing", player.isPlaying)
             .put("offsetX", settings.offsetX).put("offsetY", settings.offsetY)
+            .put("cropTop", settings.cropTop).put("cropRight", settings.cropRight)
+            .put("cropBottom", settings.cropBottom).put("cropLeft", settings.cropLeft)
             .put("visible", window.visibility == View.VISIBLE)
             .put("repeatOne", player.repeatMode == Player.REPEAT_MODE_ONE)
             .put("playbackState", playbackState())
@@ -250,7 +252,10 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         window.visibility = View.GONE
     }
 
-    fun configure(position: Position?, size: Int?, zoom: Float?, volume: Int?, offsetX: Int? = null, offsetY: Int? = null) {
+    fun configure(
+        position: Position?, size: Int?, zoom: Float?, volume: Int?, offsetX: Int? = null, offsetY: Int? = null,
+        cropTop: Int? = null, cropRight: Int? = null, cropBottom: Int? = null, cropLeft: Int? = null,
+    ) {
         if (position != null) this.position = position
         if (size != null) this.size = size
         if (zoom != null) this.zoom = zoom
@@ -259,7 +264,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             settings.volume = volume
             player.volume = volume / 100f
         }
-        settings.saveLayout(this.position, this.size, this.zoom, offsetX, offsetY)
+        settings.saveLayout(this.position, this.size, this.zoom, offsetX, offsetY, cropTop, cropRight, cropBottom, cropLeft)
         updateWindow()
     }
 
@@ -279,17 +284,34 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
 
     fun setLayout() {
         val metrics = resources.displayMetrics
-        val dimensions = WindowGeometry.dimensions(metrics.widthPixels, metrics.heightPixels, size, aspect)
-        layout.width = dimensions.first
-        layout.height = dimensions.second
+        val (width, height) = WindowGeometry.dimensions(metrics.widthPixels, metrics.heightPixels, size, aspect)
+        val crop = WindowGeometry.crop(width, height, settings.cropTop, settings.cropRight, settings.cropBottom, settings.cropLeft)
+        layout.width = crop.width()
+        layout.height = crop.height()
         layout.gravity = position.gravity
         val x = WindowGeometry.percentPixels(settings.offsetX, metrics.widthPixels)
         val y = WindowGeometry.percentPixels(settings.offsetY, metrics.heightPixels)
-        // WindowManager measures offsets inward from the right and bottom edges.
-        layout.x = if (layout.gravity and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.RIGHT) -x else x
-        layout.y = if (layout.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) -y else y
+        // Place the cropped window over the matching part of the original frame.
+        layout.x = when (layout.gravity and Gravity.HORIZONTAL_GRAVITY_MASK) {
+            Gravity.LEFT -> x + crop.left
+            Gravity.RIGHT -> width - crop.right - x
+            else -> x + crop.left + (metrics.widthPixels - width) / 2 - (metrics.widthPixels - layout.width) / 2
+        }
+        layout.y = when (layout.gravity and Gravity.VERTICAL_GRAVITY_MASK) {
+            Gravity.TOP -> y + crop.top
+            Gravity.BOTTOM -> height - crop.bottom - y
+            else -> y + crop.top + (metrics.heightPixels - height) / 2 - (metrics.heightPixels - layout.height) / 2
+        }
         layout.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         if (x != 0 || y != 0) layout.flags = layout.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        val videoLayout = videoSurface.layoutParams
+        if (videoLayout.width != width || videoLayout.height != height) {
+            videoLayout.width = width
+            videoLayout.height = height
+            videoSurface.layoutParams = videoLayout
+        }
+        videoSurface.translationX = -crop.left.toFloat()
+        videoSurface.translationY = -crop.top.toFloat()
         videoSurface.scaleX = zoom
         videoSurface.scaleY = zoom
     }

@@ -6,7 +6,7 @@ test.use({channel:'msedge',viewport:{width:390,height:844}});
 
 let responseRevision=0;
 const stateResponse=state=>({...state,revision:++responseRevision});
-const player=id=>({sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',offsetX:0,offsetY:0,sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
+const player=id=>({sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',offsetX:0,offsetY:0,cropTop:0,cropRight:0,cropBottom:0,cropLeft:0,sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
 
 test('source error survives polling, layout changes, tab switches and reload until the next source attempt',async({page})=>{
     const state={players:[player('1'),player('2')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
@@ -235,6 +235,40 @@ test('renaming a tab updates its labels across remotes and preserves the player 
     await page.reload();
     await expect(page.getByRole('button',{name:'Rename '+name,exact:true})).toBeVisible();
     expect(names).toEqual([name]);
+});
+
+test('cropping edits a single edge on the active player and restores all four edges on reload',async({page})=>{
+    const state={players:[player('1'),{...player('2'),offsetX:12,cropTop:-7,cropRight:-12,cropBottom:-9}],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    const writes=[];
+    await page.route('http://pippy.test/**',async route=>{
+        const req=route.request(),url=new URL(req.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
+        expect(url.pathname).toBe('/session/players/2/config');
+        const fields=[...new URLSearchParams(req.postData())];
+        writes.push(fields);
+        for(const [field,value] of fields)state.players[1][field]=Number(value);
+        return route.fulfill({body:'OK'});
+    });
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    const second=page.locator('#player-panel-2');
+    const left=second.getByLabel('Left crop');
+    await expect(left).toBeHidden();
+    await second.getByText('Cropping',{exact:true}).click();
+    await left.fill('-21');
+    await expect.poll(()=>writes).toEqual([[['cropLeft','-21']]]);
+    await expect(second.locator('#player-2-cropLeftValue')).toHaveText('-21%');
+    await expect(second.getByLabel('Horizontal screen offset')).toHaveValue('12');
+    await page.reload();
+    await page.locator('#player-panel-1').getByText('Cropping',{exact:true}).click();
+    await expect(page.locator('#player-panel-1').getByLabel('Left crop')).toHaveValue('0');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await second.getByText('Cropping',{exact:true}).click();
+    await expect(second.getByLabel('Top crop')).toHaveValue('-7');
+    await expect(second.getByLabel('Right crop')).toHaveValue('-12');
+    await expect(second.getByLabel('Bottom crop')).toHaveValue('-9');
+    await expect(left).toHaveValue('-21');
 });
 
 test('reload sees pending source work and playback completion independently of a source HTTP response',async({page})=>{

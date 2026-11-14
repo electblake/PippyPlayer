@@ -17,19 +17,30 @@ class PlayerSettings internal constructor(context: Context, val id: String) {
     val position: Position get() = Position.valueOf(preferences.getString("position", Position.BOTTOM_RIGHT.name)!!)
     val offsetX: Int get() = preferences.getInt("offsetX", 0)
     val offsetY: Int get() = preferences.getInt("offsetY", 0)
+    val cropTop: Int get() = preferences.getInt("cropTop", 0)
+    val cropRight: Int get() = preferences.getInt("cropRight", 0)
+    val cropBottom: Int get() = preferences.getInt("cropBottom", 0)
+    val cropLeft: Int get() = preferences.getInt("cropLeft", 0)
     var sorting: PlaylistSort
         get() = PlaylistSort.valueOf(preferences.getString("sorting", PlaylistSort.DEFAULT.name)!!)
         set(value) { preferences.edit { putString("sorting", value.name) } }
     var repeatOne: Boolean
         get() = preferences.getBoolean("repeatOne", false)
         set(value) { preferences.edit { putBoolean("repeatOne", value) } }
-    fun saveLayout(position: Position, size: Int, zoom: Float, offsetX: Int? = null, offsetY: Int? = null) {
+    fun saveLayout(
+        position: Position, size: Int, zoom: Float, offsetX: Int? = null, offsetY: Int? = null,
+        cropTop: Int? = null, cropRight: Int? = null, cropBottom: Int? = null, cropLeft: Int? = null,
+    ) {
         preferences.edit {
             putString("position", position.name)
             putInt("size", size)
             putFloat("zoom", zoom)
             offsetX?.let { putInt("offsetX", it) }
             offsetY?.let { putInt("offsetY", it) }
+            cropTop?.let { putInt("cropTop", it) }
+            cropRight?.let { putInt("cropRight", it) }
+            cropBottom?.let { putInt("cropBottom", it) }
+            cropLeft?.let { putInt("cropLeft", it) }
         }
     }
 
