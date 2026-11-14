@@ -151,10 +151,51 @@ test('an older state response cannot resurrect a deleted player',async({page})=>
     await expect.poll(()=>reads).toBe(2);
     await page.getByRole('button',{name:'Delete Player 1',exact:true}).click();
     await expect(page.locator('#player-panel-1')).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Rename Player 1',exact:true})).toHaveCount(0);
     release();
     await page.clock.runFor(2000);
     await expect(page.locator('#player-panel-1')).toHaveCount(0);
     await expect(page.getByRole('tab',{name:'Player 2',exact:true})).toHaveAttribute('aria-selected','true');
+});
+
+test('renaming a tab updates its labels across remotes and preserves the player and its URL draft',async({page,context})=>{
+    const state={players:[player('1'),player('2')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    const names=[];
+    await context.route('http://pippy.test/**',async route=>{
+        const req=route.request(),url=new URL(req.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
+        expect(req.method()).toBe('POST');
+        expect(url.pathname).toBe('/session/players/2/name');
+        const name=new URLSearchParams(req.postData()).get('name');
+        names.push(name);
+        state.players[1].name=name;
+        return route.fulfill({body:'OK'});
+    });
+    const otherRemote=await context.newPage();
+    await otherRemote.goto('http://pippy.test/session');
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('tab',{name:'Player 1',exact:true}).press('ArrowRight');
+    await page.locator('#player-2-url').fill('https://draft.test/video');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).press('Tab');
+    const pencil=page.getByRole('button',{name:'Rename Player 2',exact:true});
+    await expect(pencil).toBeFocused();
+    page.once('dialog',dialog=>dialog.dismiss());
+    await page.keyboard.press('Enter');
+    expect(names).toEqual([]);
+
+    const name='Kitchen & <TV>';
+    page.once('dialog',dialog=>dialog.accept(name));
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('tab',{name,exact:true})).toHaveAttribute('aria-selected','true');
+    await expect(page.getByRole('heading',{name,exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Delete '+name,exact:true})).toBeVisible();
+    await expect(page.locator('#player-2-url')).toHaveValue('https://draft.test/video');
+    await expect(otherRemote.getByRole('tab',{name,exact:true})).toBeVisible();
+    await expect(otherRemote.getByRole('tab',{name:'Player 1',exact:true})).toHaveAttribute('aria-selected','true');
+    await page.reload();
+    await expect(page.getByRole('button',{name:'Rename '+name,exact:true})).toBeVisible();
+    expect(names).toEqual([name]);
 });
 
 test('reload sees pending source work and playback completion independently of a source HTTP response',async({page})=>{

@@ -57,7 +57,7 @@ class SettingsActivity : Activity() {
         val playerSelector = Spinner(this).apply {
             contentDescription = "Player"
             adapter = ArrayAdapter(this@SettingsActivity, android.R.layout.simple_spinner_dropdown_item,
-                playerIds.map { "Player $it" })
+                playerIds.map { shared.player(it).name })
         }
         content.addView(playerSelector)
         val cacheLabel = label("Resume buffer after a stall (milliseconds)")

@@ -167,7 +167,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         setDebugEnabled(PlayerState.debugEnabled)
     }
     fun snapshot(): JSONObject =
-        JSONObject().put("id", id).put("name", "Player $id").put("url", settings.lastPlayedUrl).put("size", size)
+        JSONObject().put("id", id).put("name", settings.name).put("url", settings.lastPlayedUrl).put("size", size)
             .put("zoom", zoom).put("volume", volume)
             .put("queueLength", queue.count)
             .put("queueIndex", queue.index)

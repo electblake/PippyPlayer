@@ -26,9 +26,9 @@ class PlayerServiceTest {
             context.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit()
         }
         val executor = Executors.newSingleThreadExecutor()
-        val controller = Robolectric.buildService(PlayerService::class.java).create()
-        val base = "http://127.0.0.1:${PlayerState.controllerPort}/${PlayerState.token}"
+        var controller = Robolectric.buildService(PlayerService::class.java).create()
         fun request(path: String, method: String = "GET", body: String = ""): String {
+            val base = "http://127.0.0.1:${PlayerState.controllerPort}/${PlayerState.token}"
             val future = executor.submit(Callable {
                 val connection = URI(base + path).toURL().openConnection() as HttpURLConnection
                 connection.requestMethod = method
@@ -58,10 +58,14 @@ class PlayerServiceTest {
             request("/players/1/config", "POST", "size=60&position=TOP_LEFT&volume=23")
             request("/players/$secondId/config", "POST", "volume=81")
             request("/players/1/config", "POST", "zoom=2")
+            val secondName = "Kitchen & TV"
+            request("/players/$secondId/name", "POST", "name=+Kitchen+%26+TV+")
             val state = JSONObject(request("/state"))
             assertTrue(state.getLong("revision") > firstState.getLong("revision"))
             val first = state.getJSONArray("players").getJSONObject(0)
             val second = state.getJSONArray("players").getJSONObject(1)
+            assertEquals("Player 1", first.getString("name"))
+            assertEquals(secondName, second.getString("name"))
             assertEquals(60, first.getInt("size"))
             assertEquals(23, first.getInt("volume"))
             assertEquals(2.0, first.getDouble("zoom"), 0.0)
@@ -96,6 +100,16 @@ class PlayerServiceTest {
             assertEquals(1, remaining.length())
             assertEquals(secondId, remaining.getJSONObject(0).getString("id"))
             assertEquals(81, remaining.getJSONObject(0).getInt("volume"))
+
+            controller.destroy()
+            controller = Robolectric.buildService(PlayerService::class.java).create()
+            val restored = JSONObject(request("/state")).getJSONArray("players").getJSONObject(0)
+            assertEquals(secondId, restored.getString("id"))
+            assertEquals(secondName, restored.getString("name"))
+            assertEquals(81, restored.getInt("volume"))
+            request("/players/$secondId/name", "POST", "name=")
+            val reset = JSONObject(request("/state")).getJSONArray("players").getJSONObject(0)
+            assertEquals("Player $secondId", reset.getString("name"))
         } finally {
             controller.destroy()
             executor.shutdownNow()

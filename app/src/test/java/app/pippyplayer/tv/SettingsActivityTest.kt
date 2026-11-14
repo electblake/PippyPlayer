@@ -35,12 +35,15 @@ class SettingsActivityTest {
     @Test fun changingSelectedPlayerDoesNotReplaceTheSharedServerInput() {
         val settings = PlaybackSettings(context)
         settings.upnpServer = "http://saved.test"
-        settings.addPlayer()
+        settings.player(settings.addPlayer()).name = "Kitchen TV"
         Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->
             val views = descendants(controller.get().window.decorView)
             val server = views.filterIsInstance<EditText>().single { it.contentDescription == "UPnP server URL" }
             server.setText("http://new.test")
-            views.filterIsInstance<Spinner>().single().setSelection(1)
+            val selector = views.filterIsInstance<Spinner>().single()
+            assertEquals("Player 1", selector.adapter.getItem(0))
+            assertEquals("Kitchen TV", selector.adapter.getItem(1))
+            selector.setSelection(1)
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals("http://new.test", server.text.toString())
             views.filterIsInstance<Button>().single { it.text == "Save shared server" }.performClick()

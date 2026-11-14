@@ -77,6 +77,11 @@ class PlayerService : Service() {
                         }
                         call.respondText("OK")
                     }
+                    post("/name") {
+                        val name = call.receiveParameters().getAll("name")!!.single()
+                        withContext(Dispatchers.Main) { players.getValue(call.parameters["playerId"]!!).settings.name = name }
+                        call.respondText("OK")
+                    }
                     post("/source") {
                         val fields = call.receiveParameters()
                         val url = fields.getAll("url")!!.single()

@@ -6,6 +6,12 @@ import androidx.core.content.edit
 /** Persistent settings belonging to one registered player; shared settings live in PlaybackSettings. */
 class PlayerSettings internal constructor(context: Context, val id: String) {
     private val preferences = context.getSharedPreferences("player_$id", Context.MODE_PRIVATE)
+    var name: String
+        get() = preferences.getString("name", "Player $id")!!
+        set(value) {
+            val name = value.trim()
+            preferences.edit { if (name.isEmpty()) remove("name") else putString("name", name) }
+        }
     val size: Int get() = preferences.getInt("size", 30)
     val zoom: Float get() = preferences.getFloat("zoom", 1f)
     val position: Position get() = Position.valueOf(preferences.getString("position", Position.BOTTOM_RIGHT.name)!!)
