@@ -17,8 +17,9 @@ import android.widget.AdapterView
 class SettingsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var settings = PlaybackSettings(this)
-        val playerIds = settings.playerIds
+        val shared = PlaybackSettings(this)
+        val playerIds = shared.playerIds
+        var settings = playerIds.firstOrNull()?.let { shared.player(it) }
         val padding = (32 * resources.displayMetrics.density).toInt()
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -38,7 +39,7 @@ class SettingsActivity : Activity() {
             id = View.generateViewId()
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
             setSingleLine(true)
-            setText(settings.upnpServer)
+            setText(shared.upnpServer)
             contentDescription = "UPnP server URL"
         }
         serverLabel.labelFor = server.id
@@ -47,7 +48,7 @@ class SettingsActivity : Activity() {
         content.addView(Button(this).apply {
             text = "Save shared server"
             setOnClickListener {
-                settings.upnpServer = server.text.toString().trim()
+                shared.upnpServer = server.text.toString().trim()
                 finish()
             }
         })
@@ -64,7 +65,7 @@ class SettingsActivity : Activity() {
             id = View.generateViewId()
             inputType = InputType.TYPE_CLASS_NUMBER
             setSingleLine(true)
-            setText(settings.networkCacheMs.toString())
+            setText(settings?.networkCacheMs?.toString().orEmpty())
             contentDescription = "Resume buffer after a stall in milliseconds"
         }
         cacheLabel.labelFor = cache.id
@@ -72,8 +73,8 @@ class SettingsActivity : Activity() {
         label("Wait for this much buffered video after a delivery stall. Restart PippyPlayer's service to apply changes. Forward buffering targets 10–20 seconds within a 16 MiB sample budget; the next video preloads up to 3 seconds.", 16f)
         playerSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                settings = PlaybackSettings(this@SettingsActivity, playerIds[position])
-                cache.setText(settings.networkCacheMs.toString())
+                settings = shared.player(playerIds[position])
+                cache.setText(settings?.networkCacheMs?.toString().orEmpty())
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
@@ -81,7 +82,7 @@ class SettingsActivity : Activity() {
             text = "Save player buffer"
             isEnabled = playerIds.isNotEmpty()
             setOnClickListener {
-                settings.saveNetworkCacheMs(cache.text.toString().toInt())
+                shared.player(playerIds[playerSelector.selectedItemPosition]).saveNetworkCacheMs(cache.text.toString().toInt())
                 finish()
             }
         })

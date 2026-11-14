@@ -31,7 +31,8 @@ class SharedUpnpServerTest {
             context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit()
                 .putString("upnpServer", serverUrl).commit()
             val first = PlaybackSettings(context)
-            val second = PlaybackSettings(context, first.addPlayer())
+            first.addPlayer()
+            val second = PlaybackSettings(context)
             val requests = mutableListOf<Pair<String, String>>()
             val responder = thread {
                 repeat(4) {
@@ -55,7 +56,7 @@ class SharedUpnpServerTest {
             }
             for (settings in listOf(first, second)) {
                 val request = SourceRequest()
-                val entries = request.load("https://stash.test/performers/5649/scenes", settings.upnpServer)
+                val entries = kotlinx.coroutines.runBlocking { request.load("https://stash.test/performers/5649/scenes", settings.upnpServer) }
                 assertEquals(listOf("$serverUrl/video.mp4"), entries.map { it.uri })
                 assertNull(request.error)
             }
@@ -72,17 +73,17 @@ class SharedUpnpServerTest {
             .putBoolean("player1SettingsMigrated", true).putString("upnpServer", "http://old.test").commit()
         context.getSharedPreferences("player_1", Context.MODE_PRIVATE).edit()
             .putString("upnpServer", "http://working.test:9999").commit()
-        val second = PlaybackSettings(context, "2")
+        val second = PlaybackSettings(context)
         assertEquals("http://working.test:9999", second.upnpServer)
         assertEquals(second.upnpServer, PlaybackSettings(context).upnpServer)
         second.removePlayer("1")
         second.removePlayer("2")
-        val third = PlaybackSettings(context, second.addPlayer())
-        assertEquals("http://working.test:9999", third.upnpServer)
-        third.upnpServer = "http://changed.test"
+        val third = second.player(second.addPlayer())
+        assertEquals("http://working.test:9999", second.upnpServer)
+        second.upnpServer = "http://changed.test"
         assertEquals("http://changed.test", second.upnpServer)
         third.saveNetworkCacheMs(6000)
-        assertEquals("http://changed.test", PlaybackSettings(context, "3").upnpServer)
+        assertEquals("http://changed.test", PlaybackSettings(context).upnpServer)
     }
 
     @Test fun serverConfiguredOnlyOnRemainingPlayerIsPreserved() {
@@ -90,6 +91,6 @@ class SharedUpnpServerTest {
             .putString("players", "[\"2\"]").commit()
         context.getSharedPreferences("player_2", Context.MODE_PRIVATE).edit()
             .putString("upnpServer", "http://remaining.test").commit()
-        assertEquals("http://remaining.test", PlaybackSettings(context, "2").upnpServer)
+        assertEquals("http://remaining.test", PlaybackSettings(context).upnpServer)
     }
 }

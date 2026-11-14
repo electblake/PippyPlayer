@@ -11,11 +11,11 @@ The build runs unit tests and Android lint, then writes `dist/pippyplayer.apk` a
 
 ## Controller regression tests
 
-With Node.js and Microsoft Edge installed, install the browser test dependency and run the error-persistence checks:
+With Node.js and Microsoft Edge installed, install the browser test dependency and run the controller regression checks:
 
 ```powershell
 npm install --no-save --package-lock=false playwright@1.62.1
 npx --no-install playwright test tests/controller-errors.spec.cjs --workers=1 --reporter=line --output=artifacts/controller-error-tests
 ```
 
-These tests exercise the bundled controller against controlled HTTP/state responses. The Android unit suite separately covers persisted-setting upgrades and source loading against a real local HTTP server returning an error. Neither replaces testing playback on an Android TV.
+These tests exercise the bundled controller against controlled HTTP/state responses. The Android suite covers persisted-setting upgrades, independent player runtimes, source cancellation, large playlists, and actual Ktor HTTP routes under Robolectric. Neither replaces testing playback on an Android TV.

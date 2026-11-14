@@ -1,17 +1,62 @@
 package app.pippyplayer.tv
 
-/** Retains the original source failure for the controller while the request still fails normally. */
-class SourceRequest {
-    @Volatile var error: String? = null
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runInterruptible
+
+/** One source operation per player. All state and commit callbacks belong to the main dispatcher. */
+class SourceRequest(
+    private val fetch: suspend (String, String) -> List<PlaylistEntry> = { url, server ->
+        runInterruptible(Dispatchers.IO) { MediaSource.load(url, server) }
+    }
+) {
+    private var active: Job? = null
+    var revision = 0L
+        private set
+    var requestId = ""
+        private set
+    var loading = false
+        private set
+    var error: String? = null
         private set
 
-    fun load(url: String, upnpServer: String): List<PlaylistEntry> {
+    suspend fun load(url: String, server: String, requestId: String = "", commit: (List<PlaylistEntry>) -> Unit = {}): List<PlaylistEntry> = coroutineScope {
+        active?.cancel()
+        val operation = currentCoroutineContext().job
+        active = operation
+        revision++
+        this@SourceRequest.requestId = requestId
+        loading = true
         error = null
         try {
-            return MediaSource.load(url, upnpServer)
+            val entries = fetch(url, server)
+            currentCoroutineContext().ensureActive()
+            commit(entries)
+            entries
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (failure: Exception) {
-            error = failure.stackTraceToString()
+            if (active === operation) error = failure.stackTraceToString()
             throw failure
+        } finally {
+            if (active === operation) {
+                active = null
+                loading = false
+            }
         }
+    }
+
+    fun cancel() {
+        active?.cancel()
+        active = null
+        revision++
+        requestId = ""
+        loading = false
+        error = null
     }
 }

@@ -19,13 +19,13 @@ class SourceRequestTest {
             }
             val request = SourceRequest()
             val failure = assertThrows(IOException::class.java) {
-                request.load("http://127.0.0.1:${server.localPort}/video", "")
+                kotlinx.coroutines.runBlocking { request.load("http://127.0.0.1:${server.localPort}/video", "") }
             }
             responder.join()
             assertEquals(failure.stackTraceToString(), request.error)
             assertTrue(request.error!!.contains("500"))
             assertNull(SourceRequest().error)
-            request.load("rtsp://media.test/video", "")
+            kotlinx.coroutines.runBlocking { request.load("rtsp://media.test/video", "") }
             assertNull(request.error)
         }
     }

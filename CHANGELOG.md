@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-11-13
+
+### Fixed
+
+- Canceled pending source loads when stopping, deleting, or replacing a player's source, preventing late results from restarting playback or overwriting newer queues.
+- Kept loading state authoritative across remote controllers, including completion before the original request returns; preserve Pause and Hide actions made during loading.
+- Sent only changed player controls, preserve unsaved input, and reject stale state snapshots so another remote cannot silently overwrite settings or restore deleted panels.
+- Kept shared UPnP configuration, history, and debug settings separate from explicitly identified player settings, with versioned upgrades that preserve saved values.
+- Handled empty queues without opening an empty video window and sort playlists with missing titles or durations after known values.
+- Forwarded player deletion through the emulator controller proxy.
+- Added regression coverage for actual player lifecycles, HTTP service routes, concurrent source requests, and remote control synchronization.
+
 ## [0.12.3] - 2026-11-13
 
 ### Fixed

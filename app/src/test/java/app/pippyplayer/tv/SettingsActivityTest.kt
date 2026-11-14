@@ -44,8 +44,8 @@ class SettingsActivityTest {
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals("http://new.test", server.text.toString())
             views.filterIsInstance<Button>().single { it.text == "Save shared server" }.performClick()
-            assertEquals("http://new.test", PlaybackSettings(context, "1").upnpServer)
-            assertEquals("http://new.test", PlaybackSettings(context, "2").upnpServer)
+            assertEquals("http://new.test", PlaybackSettings(context).upnpServer)
+            assertEquals("http://new.test", PlaybackSettings(context).upnpServer)
         }
     }
 
@@ -59,7 +59,7 @@ class SettingsActivityTest {
             assertTrue(save.isEnabled)
             save.performClick()
             val settings = PlaybackSettings(context)
-            assertEquals("http://shared.test", PlaybackSettings(context, settings.addPlayer()).upnpServer)
+            assertEquals("http://shared.test", PlaybackSettings(context).upnpServer)
         }
     }
 }

@@ -12,8 +12,8 @@ All routes are below `/<session-token>`:
 | DELETE | `/players/{playerId}` | Release its playback engine and window, delete its settings and remove it from the player list |
 | POST | `/debug` | Set shared debug visibility (`enabled`) |
 | POST | `/recent-url-name` | Name a shared recent URL (`url`, `name`) |
-| POST | `/players/{playerId}/config` | Layout/audio form fields: `position`, `size`, `zoom`, `volume` |
-| POST | `/players/{playerId}/source` | Load `url`; automatically detect direct video, playlist, or DLNA |
+| POST | `/players/{playerId}/config` | Update only supplied layout/audio form fields: `position`, `size`, `zoom`, `volume` |
+| POST | `/players/{playerId}/source` | Load `url` with a unique `requestId`; automatically detect direct video, playlist, or DLNA |
 | POST | `/players/{playerId}/previous`, `/players/{playerId}/next` | Move through the queue |
 | POST | `/players/{playerId}/play` | Resume |
 | POST | `/players/{playerId}/pause` | Pause |
@@ -30,3 +30,11 @@ The UPnP server is read from the shared `playback.upnpServer` preference for eve
 Playlist sorting updates Media3's custom traversal order once, using stable media IDs to map native indices. Native item indices remain unchanged; the controller reports the queue's sorted index. This avoids one full timeline update per moved item and preserves the current media period. See [Media3 custom shuffle order](https://developer.android.com/media/media3/exoplayer/playlists#setting-a-custom-shuffle-order). The same order mechanism is used for every sorting mode and reset for each new source.
 
 The TV loading view responds directly to playback-state and is-playing callbacks. Remote status polls run sequentially, and the current playback status is shown separately from retained request errors.
+
+## Player ownership and request lifecycle
+
+`PlaybackSettings` owns the shared store and player registry. `PlayerSettings` owns only one registered player's preferences. `PlayerRuntime` owns that player's engine, window, queue, and source operation. `PlayerService` routes HTTP commands to those runtimes on the main dispatcher. No player is selected implicitly when reading or changing settings.
+
+Starting a source cancels the previous operation for that player. Stop and Delete cancel pending work before clearing or releasing the engine. A canceled operation cannot commit a queue or save a URL. Pause and Hide during loading remain effective when the source completes. Failures retain their original exception and propagate to the HTTP server.
+
+State snapshots carry a monotonically increasing `revision`; each player also reports `sourceRevision`, `sourceRequestId`, and `sourceLoading`. Controllers reject older snapshots and use the accepted source operation's state to finish loading independently of its HTTP response. Each control sends only the changed field. Unsaved input remains local until submitted; other fields follow the server state.

@@ -24,6 +24,7 @@ class ControllerProxy(http.server.BaseHTTPRequestHandler):
 
     do_GET = forward
     do_POST = forward
+    do_DELETE = forward
 
 
 http.server.ThreadingHTTPServer((sys.argv[1], int(sys.argv[2])), ControllerProxy).serve_forever()

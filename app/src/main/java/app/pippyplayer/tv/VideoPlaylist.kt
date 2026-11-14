@@ -45,9 +45,9 @@ class PlaybackQueue {
     private fun sorted(sort: PlaylistSort) = when (sort) {
         PlaylistSort.RANDOM -> original.shuffled()
         PlaylistSort.DEFAULT -> original
-        PlaylistSort.LENGTH_SHORTEST -> original.sortedBy { it.value.durationSeconds!! }
-        PlaylistSort.LENGTH_LONGEST -> original.sortedByDescending { it.value.durationSeconds!! }
-        PlaylistSort.NAME -> original.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.value.title!! })
+        PlaylistSort.LENGTH_SHORTEST -> original.sortedWith(compareBy(nullsLast<Double>()) { it.value.durationSeconds })
+        PlaylistSort.LENGTH_LONGEST -> original.sortedWith(compareBy(nullsLast(reverseOrder<Double>())) { it.value.durationSeconds })
+        PlaylistSort.NAME -> original.sortedWith(compareBy(nullsLast(String.CASE_INSENSITIVE_ORDER)) { it.value.title })
     }
 
     fun sort(sort: PlaylistSort) {

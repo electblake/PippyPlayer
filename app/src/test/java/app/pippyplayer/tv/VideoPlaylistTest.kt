@@ -5,6 +5,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class VideoPlaylistTest {
+    @Test fun missingMetadataSortsAfterKnownValuesWithoutInventingValues() {
+        val queue = PlaybackQueue()
+        queue.load(listOf(PlaylistEntry("unknown", null), PlaylistEntry("long", "Bravo", 20.0),
+            PlaylistEntry("short", "Alpha", 10.0)))
+        queue.sort(PlaylistSort.LENGTH_SHORTEST)
+        assertEquals(listOf("short", "long", "unknown"), queue.entries.map { it.uri })
+        queue.sort(PlaylistSort.LENGTH_LONGEST)
+        assertEquals(listOf("long", "short", "unknown"), queue.entries.map { it.uri })
+        queue.sort(PlaylistSort.NAME)
+        assertEquals(listOf("short", "long", "unknown"), queue.entries.map { it.uri })
+        assertNull(queue.entries.last().title)
+        assertNull(queue.entries.last().durationSeconds)
+    }
     @Test fun randomSortPreservesEntriesCurrentOccurrenceAndDefaultOrder() {
         val duplicate = PlaylistEntry("same", "Same")
         val items = listOf(duplicate, PlaylistEntry("other", "Other"), duplicate)
