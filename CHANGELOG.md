@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-14
+
 ### Added
 
 - Added a pencil button beside each remote player tab to rename it. Names are saved per player and appear in the TV's player settings.
