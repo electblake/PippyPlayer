@@ -45,6 +45,12 @@ class CrashActivity : Activity() {
         }
         actions.addView(copy)
         actions.addView(Button(this).apply {
+            setText(R.string.updates_title)
+            setOnClickListener {
+                startActivity(Intent(this@CrashActivity, UpdateActivity::class.java))
+            }
+        })
+        actions.addView(Button(this).apply {
             setText(R.string.crash_reopen)
             setOnClickListener {
                 java.nio.file.Files.delete(reportFile.toPath())

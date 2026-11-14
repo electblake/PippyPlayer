@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-13
+
+### Added
+
+- Added an App updates button to the crash screen that opens the updater directly without starting playback or deleting the crash report.
+
+### Fixed
+
+- Fixed the 0.7.0 startup crash caused by unimplemented Media3 load-control methods, explicitly forwarding lifecycle and buffering decisions to DefaultLoadControl.
+- Exercised the actual custom load controller in player-construction tests, including startup, buffering thresholds and current-playback priority.
+
 ## [0.7.0] - 2026-11-13
 
 ### Added

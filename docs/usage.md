@@ -9,3 +9,5 @@
 7. Return to the TV app and select **Stop PippyPlayer** to stop the server and remove the overlay.
 
 The controller is bundled inside the APK: no hosted website, CDN, companion app, account, or internet connection is needed for controlling LAN videos. Internet streams require internet access. The controller URL contains a random session token which changes every time the service starts. Treat the QR/link as access to this session. HTTP is intended for a trusted home LAN; do not forward the controller port to the internet. Android assigns a free port on each server start; the displayed URL and QR code include that port.
+
+If the crash report screen appears, select **App updates** to open the updater directly without starting playback. The crash report remains available until you select **Dismiss and reopen**. For installations stuck on 0.7.0, install a newer APK through Downloader over the existing app; the crash-screen update button is available from 0.7.1.

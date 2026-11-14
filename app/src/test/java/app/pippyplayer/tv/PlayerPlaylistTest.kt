@@ -20,7 +20,9 @@ class PlayerPlaylistTest {
     private val queue = PlaybackQueue()
 
     @Before fun createPlayer() {
-        player = ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build()
+        player = ExoPlayer.Builder(RuntimeEnvironment.getApplication())
+            .setLoadControl(PipLoadControl(3000))
+            .build()
         queue.load(listOf(
             PlaylistEntry("https://media.test/duplicate.mp4", "Bravo"),
             PlaylistEntry("https://media.test/zulu.mp4", "Zulu"),
@@ -73,5 +75,32 @@ class PlayerPlaylistTest {
         assertFalse(loadControl.shouldContinuePreloading(playerId, timeline, period, 0L))
         allocations.forEach { allocator.release(it) }
         assertTrue(loadControl.shouldContinuePreloading(playerId, timeline, period, 0L))
+    }
+
+    @Test fun customLoadControlForwardsLifecycleAndBufferDecisions() {
+        val control = PipLoadControl(3000)
+        val id = androidx.media3.exoplayer.analytics.PlayerId.UNSET
+        val timeline = androidx.media3.exoplayer.source.SinglePeriodTimeline(
+            60_000_000L, true, false, false, null,
+            androidx.media3.common.MediaItem.fromUri("https://media.test/video.mp4"))
+        val period = androidx.media3.exoplayer.source.MediaSource.MediaPeriodId(timeline.getUidOfPeriod(0))
+        fun parameters(bufferedUs: Long, rebuffering: Boolean = false) = androidx.media3.exoplayer.LoadControl.Parameters(
+            id, timeline, period, 0L, bufferedUs, 1f, true, rebuffering,
+            androidx.media3.common.C.TIME_UNSET, androidx.media3.common.C.TIME_UNSET)
+        assertEquals(0L, control.getBackBufferDurationUs(id))
+        assertFalse(control.retainBackBufferFromKeyframe(id))
+        control.onPrepared(id)
+        control.onTracksSelected(parameters(0L), androidx.media3.exoplayer.source.TrackGroupArray.EMPTY, emptyArray())
+        assertTrue(control.shouldContinueLoading(parameters(0L)))
+        assertFalse(control.shouldContinuePreloading(id, timeline, period, 0L))
+        assertFalse(control.shouldStartPlayback(parameters(0L)))
+        assertTrue(control.shouldStartPlayback(parameters(1_500_000L)))
+        assertFalse(control.shouldStartPlayback(parameters(1_500_000L, true)))
+        assertTrue(control.shouldStartPlayback(parameters(3_000_000L, true)))
+        assertFalse(control.shouldContinueLoading(parameters(20_000_000L)))
+        assertTrue(control.shouldContinuePreloading(id, timeline, period, 0L))
+        control.onStopped(id)
+        control.onPrepared(id)
+        control.onReleased(id)
     }
 }
