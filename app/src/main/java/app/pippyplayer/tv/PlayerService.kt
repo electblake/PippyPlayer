@@ -298,6 +298,7 @@ class PlayerService : Service() {
             PixelFormat.OPAQUE)
         setLayout()
         manager.addView(window, layout)
+        player.addListener(PlayerVisibilityListener(window))
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 if (mediaItem != null) queue.select(queue.itemIds.indexOf(mediaItem.mediaId))

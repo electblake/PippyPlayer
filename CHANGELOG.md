@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-13
+
+### Fixed
+
+- Made the player visible on every playback-start or resume event, including direct Media3 play requests, to prevent hidden background playback. Hiding the player continued to pause it.
+
 ## [0.11.0] - 2026-11-13
 
 ### Added

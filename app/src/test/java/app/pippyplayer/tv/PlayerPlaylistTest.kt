@@ -34,6 +34,32 @@ class PlayerPlaylistTest {
 
     @After fun releasePlayer() { player.release() }
 
+    @Test fun directPlaybackRequestsRevealHiddenPlayerAndHidingStillPauses() {
+        val window = android.view.View(RuntimeEnvironment.getApplication())
+        player.addListener(PlayerVisibilityListener(window))
+        player.setWindowVisible(window, false)
+        player.play()
+        assertEquals(android.view.View.VISIBLE, window.visibility)
+        assertTrue(player.playWhenReady)
+        player.setWindowVisible(window, false)
+        assertEquals(android.view.View.GONE, window.visibility)
+        assertFalse(player.playWhenReady)
+        player.playWhenReady = true
+        assertEquals(android.view.View.VISIBLE, window.visibility)
+        assertEquals(12_000L, player.currentPosition)
+        assertEquals(0.23f, player.volume, 0f)
+    }
+
+    @Test fun playbackStartingRevealsWindowWithoutChangingPauseState() {
+        val window = android.view.View(RuntimeEnvironment.getApplication())
+        window.visibility = android.view.View.GONE
+        val listener = PlayerVisibilityListener(window)
+        listener.onIsPlayingChanged(false)
+        assertEquals(android.view.View.GONE, window.visibility)
+        listener.onIsPlayingChanged(true)
+        assertEquals(android.view.View.VISIBLE, window.visibility)
+    }
+
     @Test fun repeatOneLoopsCurrentItemAndCanBeDisabledWithoutChangingPlayback() {
         player.pause()
         player.toggleRepeatOne()
