@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-13
+
+### Added
+
+- Added multiple simultaneous players with independent video windows, playback controls, queues, and saved settings.
+- Added player tabs with a plus button to create players and a Delete player control to stop and remove a player, including the last player.
+- Added player selection to the TV playback settings screen for separate UPnP servers and buffer thresholds.
+
+### Changed
+
+- Moved remote controls into each player's tab while keeping Recent URLs, their display names, and debug visibility shared.
+- Scoped playback API routes and persistent settings by player ID; switching tabs preserved other players' playback and unfinished inputs.
+- Saved position, size, zoom, volume, sorting, and repeat independently for each player across service restarts.
+- Replaced single-player settings storage with per-player storage. Existing installations need to configure Player 1 again after upgrading; shared Recent URL history is retained.
+
 ## [0.11.1] - 2026-11-13
 
 ### Fixed

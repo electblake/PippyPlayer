@@ -20,9 +20,4 @@ object PlayerState {
     var debugEnabled by mutableStateOf(false)
     var controllerPort by mutableStateOf(0)
     var token by mutableStateOf(UUID.randomUUID().toString())
-    var url = ""
-    var size = 30
-    var zoom = 1f
-    var volume = 50
-    var position = Position.BOTTOM_RIGHT
 }

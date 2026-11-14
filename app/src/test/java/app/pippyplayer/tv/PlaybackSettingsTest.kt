@@ -16,7 +16,62 @@ class PlaybackSettingsTest {
     private val context: Context get() = RuntimeEnvironment.getApplication()
 
     @Before fun clearSettings() {
-        context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit().clear().commit()
+        listOf("playback", "player_1", "player_2", "player_3").forEach {
+            context.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit()
+        }
+    }
+
+    @Test fun playersPersistIndependentSettingsAndShareOnlyHistory() {
+        val first = PlaybackSettings(context)
+        assertEquals(listOf("1"), first.playerIds)
+        val id = first.addPlayer()
+        assertEquals(listOf("1", "2"), PlaybackSettings(context).playerIds)
+        val second = PlaybackSettings(context, id)
+        first.volume = 12
+        first.saveLayout(Position.TOP_LEFT, 45, 1.5f)
+        first.sorting = PlaylistSort.NAME
+        first.repeatOne = true
+        first.save("http://first.test", 5000)
+        first.recordPlayedUrl("https://first.test/video")
+        second.volume = 78
+        second.saveLayout(Position.BOTTOM_LEFT, 25, 2f)
+        second.save("http://second.test", 2000)
+        second.recordPlayedUrl("https://second.test/video")
+        second.nameRecentUrl("https://first.test/video", "Shared name")
+        val reopened = PlaybackSettings(context, "1")
+        assertEquals(12, reopened.volume)
+        assertEquals(45, reopened.size)
+        assertEquals(1.5f, reopened.zoom)
+        assertEquals(Position.TOP_LEFT, reopened.position)
+        assertEquals(PlaylistSort.NAME, reopened.sorting)
+        assertTrue(reopened.repeatOne)
+        assertEquals("http://first.test", reopened.upnpServer)
+        assertEquals(5000, reopened.networkCacheMs)
+        assertEquals("https://first.test/video", reopened.lastPlayedUrl)
+        assertEquals("https://second.test/video", second.lastPlayedUrl)
+        assertEquals(78, PlaybackSettings(context, "2").volume)
+        assertEquals(PlaylistSort.DEFAULT, second.sorting)
+        assertFalse(second.repeatOne)
+        assertEquals(second.recentUrls, reopened.recentUrls)
+        assertEquals("Shared name", reopened.recentUrlNames.getString("https://first.test/video"))
+    }
+
+    @Test fun deletionKeepsOtherPlayersAndHistoryAndAllowsAnEmptyCollection() {
+        val first = PlaybackSettings(context)
+        val secondId = first.addPlayer()
+        val second = PlaybackSettings(context, secondId)
+        first.volume = 12
+        second.volume = 78
+        second.recordPlayedUrl("https://shared.test/video")
+        first.removePlayer(secondId)
+        assertEquals(listOf("1"), first.playerIds)
+        assertEquals(12, first.volume)
+        assertEquals(50, PlaybackSettings(context, secondId).volume)
+        assertEquals(listOf("https://shared.test/video"), first.recentUrls)
+        first.removePlayer("1")
+        assertEquals(emptyList<String>(), PlaybackSettings(context).playerIds)
+        assertEquals("3", first.addPlayer())
+        assertEquals(listOf("3"), PlaybackSettings(context).playerIds)
     }
 
     @Test fun newInstallationHasNoHistory() {

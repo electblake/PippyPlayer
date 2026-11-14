@@ -1,26 +1,74 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><link rel="icon" href="data:,"><title>PippyPlayer Remote</title>
 <style>
-:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101820;color:#eef5f3}*{box-sizing:border-box}body{margin:0;padding:12px}main{max-width:520px;margin:auto}.card{background:#1a252c;border:1px solid #35454a;padding:16px;border-radius:12px;margin-bottom:12px}label,legend{display:block;font-size:14px;font-weight:650;margin-bottom:12px}button:disabled{opacity:.4;cursor:default}#nowPlaying{overflow-wrap:anywhere;font-size:14px;color:#9af3c5}#url,select{width:100%;font:inherit;border:1px solid #56666d;background:#101820;color:white;border-radius:10px;padding:14px;margin-bottom:14px}button{font:inherit;font-weight:650;border:1px solid #52646b;border-radius:10px;padding:13px;background:#26373f;color:#eef5f3;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #9af3c5;outline-offset:3px}.primary{width:100%;background:#9af3c5;color:#101820;border-color:#9af3c5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.grid button{height:54px;font-size:22px}.grid button[aria-pressed=true]{background:#9af3c5;color:#101820;border-color:#9af3c5}.row{display:flex;justify-content:space-between;gap:8px}.row button{flex:1}.playback{display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:6px}.playback button{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px}.playback [data-action="toggle-repeat"][aria-pressed=true]{background:#9af3c5;color:#101820;border:2px solid white}.playback svg{width:24px;height:24px;fill:currentColor}.playback .seek{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.playback .seek text{fill:currentColor;stroke:none;font:700 10px system-ui,sans-serif}@media(max-width:459px){.playback{grid-template-columns:repeat(4,minmax(44px,1fr))}}.range{margin-top:24px}.range label{display:flex;justify-content:space-between}input[type=range]{width:100%;accent-color:#9af3c5}fieldset{border:0;padding:0;margin:0}#status{font-size:13px;overflow-wrap:anywhere;min-height:20px}
-#status.loading{display:flex;align-items:center;gap:10px;color:#9af3c5}#status.loading::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #35454a;border-top-color:#9af3c5;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#status.loading::before{animation:none}}
-#recentSources{margin:0 0 16px}#recentSources summary{cursor:pointer;padding:12px 0;color:#9af3c5;font-size:14px;font-weight:650}summary:focus-visible{outline:3px solid #9af3c5;outline-offset:3px}#recentSources p{font-size:13px;color:#b8c8ce;margin:4px 0 12px}#historySearch{width:100%;font:inherit;border:1px solid #56666d;background:#101820;color:white;border-radius:10px;padding:12px}#recentUrls{list-style:none;padding:4px;margin:8px -4px 0;max-height:260px;overflow-y:auto}#recentUrls li{display:flex;gap:8px}#recentUrls .recent-select{flex:1;min-width:0}#recentUrls .recent-edit{width:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;padding:10px}#recentUrls .recent-edit svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}#recentUrls li+li{margin-top:6px}#recentUrls button{width:100%;text-align:left;overflow-wrap:anywhere;font-size:14px;font-weight:400;min-height:48px}#recentUrls button:hover{background:#354a54}
-</style></head><body><main><form id="controls"><section class="card"><label for="url">Video URL</label><input id="url" name="url" type="text" inputmode="url" placeholder="Video URL or performer/tag URI" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101820;color:#eef5f3}*{box-sizing:border-box}body{margin:0;padding:12px}main{max-width:520px;margin:auto}.card{background:#1a252c;border:1px solid #35454a;padding:16px;border-radius:12px;margin-bottom:12px}label,legend{display:block;font-size:14px;font-weight:650;margin-bottom:12px}button:disabled{opacity:.4;cursor:default}[data-control="nowPlaying"]{overflow-wrap:anywhere;font-size:14px;color:#9af3c5}[data-control="url"],select{width:100%;font:inherit;border:1px solid #56666d;background:#101820;color:white;border-radius:10px;padding:14px;margin-bottom:14px}button{font:inherit;font-weight:650;border:1px solid #52646b;border-radius:10px;padding:13px;background:#26373f;color:#eef5f3;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #9af3c5;outline-offset:3px}.primary{width:100%;background:#9af3c5;color:#101820;border-color:#9af3c5}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.grid button{height:54px;font-size:22px}.grid button[aria-pressed=true]{background:#9af3c5;color:#101820;border-color:#9af3c5}.row{display:flex;justify-content:space-between;gap:8px}.row button{flex:1}.playback{display:grid;grid-template-columns:repeat(7,minmax(44px,1fr));gap:6px}.playback button{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px}.playback [data-action="toggle-repeat"][aria-pressed=true]{background:#9af3c5;color:#101820;border:2px solid white}.playback svg{width:24px;height:24px;fill:currentColor}.playback .seek{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.playback .seek text{fill:currentColor;stroke:none;font:700 10px system-ui,sans-serif}@media(max-width:459px){.playback{grid-template-columns:repeat(4,minmax(44px,1fr))}}.range{margin-top:24px}.range label{display:flex;justify-content:space-between}input[type=range]{width:100%;accent-color:#9af3c5}fieldset{border:0;padding:0;margin:0}[data-control="status"]{font-size:13px;overflow-wrap:anywhere;min-height:20px}
+[data-control="status"].loading{display:flex;align-items:center;gap:10px;color:#9af3c5}[data-control="status"].loading::before{content:"";width:16px;height:16px;flex:0 0 16px;border:2px solid #35454a;border-top-color:#9af3c5;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){[data-control="status"].loading::before{animation:none}}
+[data-control="recentSources"]{margin:0 0 16px}[data-control="recentSources"] summary{cursor:pointer;padding:12px 0;color:#9af3c5;font-size:14px;font-weight:650}summary:focus-visible{outline:3px solid #9af3c5;outline-offset:3px}[data-control="recentSources"] p{font-size:13px;color:#b8c8ce;margin:4px 0 12px}[data-control="historySearch"]{width:100%;font:inherit;border:1px solid #56666d;background:#101820;color:white;border-radius:10px;padding:12px}[data-control="recentUrls"]{list-style:none;padding:4px;margin:8px -4px 0;max-height:260px;overflow-y:auto}[data-control="recentUrls"] li{display:flex;gap:8px}[data-control="recentUrls"] .recent-select{flex:1;min-width:0}[data-control="recentUrls"] .recent-edit{width:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;padding:10px}[data-control="recentUrls"] .recent-edit svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}[data-control="recentUrls"] li+li{margin-top:6px}[data-control="recentUrls"] button{width:100%;text-align:left;overflow-wrap:anywhere;font-size:14px;font-weight:400;min-height:48px}[data-control="recentUrls"] button:hover{background:#354a54}
+.player-navigation{display:flex;gap:8px;margin-bottom:12px;align-items:center}.player-navigation [role=tablist]{display:flex;gap:8px;overflow-x:auto;flex:1}.player-navigation button{white-space:nowrap}.player-navigation [aria-selected=true]{background:#9af3c5;color:#101820}.player-panel[hidden]{display:none}.player-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.player-heading h1{font-size:18px;margin:0}.player-heading button{font-size:13px;padding:9px 12px;color:#ffc4c4}
+</style></head><body><main><nav class="player-navigation" aria-label="Players"><div id="playerTabs" role="tablist" aria-label="Players"></div><button id="addPlayer" type="button" aria-label="Add player" title="Add player">+</button></nav><p id="noPlayers" hidden>No players yet. Select + to add a player.</p><div id="playerPanels"></div><template id="playerTemplate"><form id="controls"><div class="player-heading"><h1 data-player-name></h1><button type="button" data-delete-player>Delete player</button></div><section class="card"><label for="url">Video URL</label><input id="url" name="url" type="text" inputmode="url" placeholder="Video URL or performer/tag URI" autocomplete="off" autocapitalize="none" spellcheck="false" required>
 <details id="recentSources"><summary>Recent URLs <span id="recentCount">(0)</span></summary><p>Select a URL to play it immediately. Most recent first.</p><label for="historySearch">Search recent URLs</label><input id="historySearch" type="search" placeholder="Search by name or URL" autocomplete="off"><ul id="recentUrls" aria-label="Recent URLs"></ul><p id="historyEmpty" role="status">URLs you play will appear here.</p></details><button class="primary" type="submit">Play</button><p id="status" role="status"></p><div class="playback" role="group" aria-label="Playback controls"><button type="button" data-action="skip-backward" aria-label="Skip backward 10 seconds" title="Skip backward 10 seconds" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="seek"><path d="M4 8a9 9 0 1 1-1 8M4 3v5h5"/><text x="12" y="16" text-anchor="middle">10</text></svg></button><button type="button" data-action="play" aria-label="Resume playback" title="Resume playback"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class=""><path d="m7 4 14 8-14 8z"/></svg></button><button type="button" data-action="pause" aria-label="Pause playback" title="Pause playback"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class=""><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button><button type="button" data-action="stop" aria-label="Stop playback" title="Stop playback"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class=""><rect x="5" y="5" width="14" height="14" rx="1"/></svg></button><button type="button" data-action="skip-forward" aria-label="Skip forward 10 seconds" title="Skip forward 10 seconds" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="seek"><path d="M20 8a9 9 0 1 0 1 8M20 3v5h-5"/><text x="12" y="16" text-anchor="middle">10</text></svg></button><button type="button" data-action="toggle-repeat" aria-label="Repeat current video" title="Repeat current video: off" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="seek"><path d="m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4m14-1v3a2 2 0 0 1-2 2H3"/><text x="12" y="15.5" text-anchor="middle">1</text></svg></button><button type="button" data-action="toggle-visibility" aria-label="Show player and resume" title="Show player and resume" aria-pressed="false" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="seek"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path id="eyeSlash" d="m3 3 18 18"/></svg></button></div><p id="nowPlaying" aria-live="polite"></p><div class="row"><button type="button" data-action="previous" aria-label="Previous video" title="Previous video" disabled>Previous</button><button type="button" data-action="next" aria-label="Next video" title="Next video" disabled>Next</button></div><div class="range"><label for="sorting">Sorting</label><select id="sorting"><option value="DEFAULT">Default</option><option value="LENGTH_SHORTEST">Length (Shortest)</option><option value="LENGTH_LONGEST">Length (Longest)</option><option value="NAME">Name</option><option value="RANDOM">Random</option></select></div></section>
 <section class="card"><fieldset><legend>Position</legend><div class="grid" id="positions"></div></fieldset>
 <div class="range"><label for="size">Size <output id="sizeValue">30%</output></label><input type="range" id="size" name="size" min="15" max="90" value="30"></div>
 <div class="range"><label for="zoom">Zoom <output id="zoomValue">1.0×</output></label><input type="range" id="zoom" name="zoom" min="1" max="3" step="0.1" value="1"></div>
-<div class="range"><label for="volume">Volume <output id="volumeValue">50%</output></label><input type="range" id="volume" name="volume" min="0" max="100" value="50"></div></section></form><section class="card"><label for="debugEnabled" style="display:flex;align-items:center;gap:10px;margin:18px 0 0"><input id="debugEnabled" type="checkbox" role="switch" style="accent-color:#9af3c5;width:20px;height:20px">Debug info on TV and remote</label><div id="debugPanel" hidden><pre id="debugInfo" style="white-space:pre-wrap;font-size:13px;overflow-wrap:anywhere"></pre><p style="font-size:13px">Network input includes current playback and next-video preloading, not your connection’s maximum speed. Buffered time measures playable media ahead. The decoder name identifies the active hardware video decoder.</p></div></section></main>
+<div class="range"><label for="volume">Volume <output id="volumeValue">50%</output></label><input type="range" id="volume" name="volume" min="0" max="100" value="50"></div></section></form></template><section class="card"><label for="debugEnabled" style="display:flex;align-items:center;gap:10px;margin:18px 0 0"><input id="debugEnabled" type="checkbox" role="switch" style="accent-color:#9af3c5;width:20px;height:20px">Debug info on TV and remote</label><div id="debugPanel" hidden><pre id="debugInfo" style="white-space:pre-wrap;font-size:13px;overflow-wrap:anywhere"></pre><p style="font-size:13px">Network input includes current playback and next-video preloading, not your connection’s maximum speed. Buffered time measures playable media ahead. The decoder name identifies the active hardware video decoder.</p></div></section></main>
 <script>
 const base = location.pathname.replace(/\/$/, '');
-const form = document.querySelector('form'), status = document.querySelector('#status');
+const controllers=new Map();
+let activePlayerId;
+async function readState(){return (await fetch(base+'/state')).json();}
+function selectPlayer(id,focus=false){
+    activePlayerId=id;
+    for(const [playerId,controller] of controllers){
+        const selected=playerId===id;
+        controller.panel.hidden=!selected;
+        controller.button.setAttribute('aria-selected',String(selected));
+        controller.button.tabIndex=selected?0:-1;
+        if(selected&&focus)controller.button.focus();
+    }
+}
+function mountPlayer(initial){
+    const panel=document.querySelector('#playerTemplate').content.firstElementChild.cloneNode(true);
+    panel.id='player-panel-'+initial.id;
+    panel.classList.add('player-panel');panel.setAttribute('role','tabpanel');
+    panel.setAttribute('aria-labelledby','player-selector-'+initial.id);
+    for(const element of panel.querySelectorAll('[id]')){
+        const id=element.id;element.dataset.control=id;element.id='player-'+initial.id+'-'+id;
+    }
+    for(const label of panel.querySelectorAll('[for]'))label.htmlFor='player-'+initial.id+'-'+label.htmlFor;
+    const button=document.createElement('button');
+    button.type='button';button.id='player-selector-'+initial.id;button.textContent=initial.name;
+    button.setAttribute('role','tab');button.setAttribute('aria-controls',panel.id);
+    button.onclick=()=>selectPlayer(initial.id);
+    button.onkeydown=event=>{
+        const ids=[...controllers.keys()];let index=ids.indexOf(initial.id);
+        if(event.key==='ArrowRight')index=(index+1)%ids.length;
+        else if(event.key==='ArrowLeft')index=(index+ids.length-1)%ids.length;
+        else if(event.key==='Home')index=0;
+        else if(event.key==='End')index=ids.length-1;
+        else return;
+        event.preventDefault();selectPlayer(ids[index],true);
+    };
+    document.querySelector('#playerTabs').append(button);
+    document.querySelector('#playerPanels').append(panel);
+    const playerBase=base+'/players/'+initial.id;
+    panel.querySelector('[data-player-name]').textContent=initial.name;
+    const deleteButton=panel.querySelector('[data-delete-player]');
+    deleteButton.setAttribute('aria-label','Delete '+initial.name);
+    deleteButton.onclick=async()=>{
+        await fetch(playerBase,{method:'DELETE'});
+        refresh(await readState());
+        if(activePlayerId===undefined)document.querySelector('#addPlayer').focus();
+        else selectPlayer(activePlayerId,true);
+    };
+const form = panel, status = panel.querySelector('[data-control="status"]');
 const positions = ['TOP_LEFT','TOP_CENTER','TOP_RIGHT','MIDDLE_LEFT','MIDDLE_CENTER','MIDDLE_RIGHT','BOTTOM_LEFT','BOTTOM_CENTER','BOTTOM_RIGHT'];
 const arrows = ['↖','↑','↗','←','•','→','↙','↓','↘'];
 let position = 'BOTTOM_RIGHT';
 let sourceLoading = false;
-const urlInput=document.querySelector('#url');
-const recentSources=document.querySelector('#recentSources');
-const historySearch=document.querySelector('#historySearch');
-const recentList=document.querySelector('#recentUrls');
+const urlInput=panel.querySelector('[data-control="url"]');
+const recentSources=panel.querySelector('[data-control="recentSources"]');
+const historySearch=panel.querySelector('[data-control="historySearch"]');
+const recentList=panel.querySelector('[data-control="recentUrls"]');
 let recentUrls=[];
 let recentUrlNames={};
 function recentName(url){return Object.hasOwn(recentUrlNames,url)?recentUrlNames[url]:url;}
@@ -45,7 +93,7 @@ function renderRecentUrls(){
         };
         item.append(button,edit);return item;
     }));
-    const empty=document.querySelector('#historyEmpty');
+    const empty=panel.querySelector('[data-control="historyEmpty"]');
     empty.hidden=matches.length>0;
     empty.textContent=recentUrls.length?'No matching URLs.':'URLs you play will appear here.';
 }
@@ -55,38 +103,65 @@ recentSources.ontoggle=()=>{if(recentSources.open){historySearch.value='';render
 function updateRecentUrls(urls,names){
     if(JSON.stringify(urls)===JSON.stringify(recentUrls)&&JSON.stringify(names)===JSON.stringify(recentUrlNames))return;
     recentUrls=urls;recentUrlNames=names;
-    document.querySelector('#recentCount').textContent=`(${urls.length})`;
+    panel.querySelector('[data-control="recentCount"]').textContent=`(${urls.length})`;
     renderRecentUrls();
 }
-function selectPosition(value) { position=value; document.querySelectorAll('#positions button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.position===value))); }
-positions.forEach((value,i)=>{const b=document.createElement('button'); b.type='button';b.textContent=arrows[i];b.title=value.toLowerCase().replaceAll('_',' ');b.setAttribute('aria-label',b.title);b.dataset.position=value;b.onclick=async()=>{selectPosition(value);await apply();};document.querySelector('#positions').append(b);});
-function labels(){for(const id of ['size','zoom','volume'])document.querySelector('#'+id+'Value').textContent=document.querySelector('#'+id).value+(id==='zoom'?'×':'%');}
-async function state(){return (await fetch(base+'/state')).json();}
-async function apply(){const body=new URLSearchParams(new FormData(form));body.set('position',position);status.textContent=await (await fetch(base+'/config',{method:'POST',body})).text();}
-form.onsubmit=async event=>{event.preventDefault();await apply();sourceLoading=true;status.classList.add('loading');status.setAttribute('aria-busy','true');status.textContent='Loading source…';const body=new URLSearchParams({url:document.querySelector('#url').value});status.textContent=await(await fetch(base+'/source',{method:'POST',body})).text();sourceLoading=false;showStatus(await state());};
-for(const id of ['size','zoom','volume']){const input=document.querySelector('#'+id);input.oninput=labels;input.onchange=apply;}
-document.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{status.textContent=await (await fetch(base+'/'+b.dataset.action,{method:'POST'})).text();showStatus(await state());});
-const sorting=document.querySelector('#sorting');
-sorting.onchange=async()=>{const body=new URLSearchParams({sorting:sorting.value});status.textContent=await(await fetch(base+'/sorting',{method:'POST',body})).text();showStatus(await state());};
-async function start(){const s=await state();for(const id of ['url','size','zoom','volume'])document.querySelector('#'+id).value=s[id];selectPosition(s.position);labels();showStatus(s);setInterval(async()=>showStatus(await state()),1500);}
+function selectPosition(value) { position=value; panel.querySelectorAll('[data-control="positions"] button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.position===value))); }
+positions.forEach((value,i)=>{const b=document.createElement('button'); b.type='button';b.textContent=arrows[i];b.title=value.toLowerCase().replaceAll('_',' ');b.setAttribute('aria-label',b.title);b.dataset.position=value;b.onclick=async()=>{selectPosition(value);await apply();};panel.querySelector('[data-control="positions"]').append(b);});
+function labels(){for(const id of ['size','zoom','volume'])panel.querySelector('[data-control="'+id+'Value"]').textContent=panel.querySelector('[data-control="'+id+'"]').value+(id==='zoom'?'×':'%');}
+async function state(){const s=await readState();return {...s.players.find(p=>p.id===initial.id),recentUrls:s.recentUrls,recentUrlNames:s.recentUrlNames};}
+async function apply(){const body=new URLSearchParams(new FormData(form));body.set('position',position);status.textContent=await (await fetch(playerBase+'/config',{method:'POST',body})).text();}
+form.onsubmit=async event=>{event.preventDefault();await apply();sourceLoading=true;status.classList.add('loading');status.setAttribute('aria-busy','true');status.textContent='Loading source…';const body=new URLSearchParams({url:panel.querySelector('[data-control="url"]').value});status.textContent=await(await fetch(playerBase+'/source',{method:'POST',body})).text();sourceLoading=false;showStatus(await state());};
+for(const id of ['size','zoom','volume']){const input=panel.querySelector('[data-control="'+id+'"]');input.oninput=labels;input.onchange=apply;}
+panel.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{status.textContent=await (await fetch(playerBase+'/'+b.dataset.action,{method:'POST'})).text();showStatus(await state());});
+const sorting=panel.querySelector('[data-control="sorting"]');
+sorting.onchange=async()=>{const body=new URLSearchParams({sorting:sorting.value});status.textContent=await(await fetch(playerBase+'/sorting',{method:'POST',body})).text();showStatus(await state());};
+function start(){const s=initial;for(const id of ['url','size','zoom','volume'])panel.querySelector('[data-control="'+id+'"]').value=s[id];selectPosition(s.position);labels();showStatus(s);}
 function showStatus(s){
 updateRecentUrls(s.recentUrls,s.recentUrlNames);
 sorting.value=s.sorting;
-const repeatButton=document.querySelector('[data-action="toggle-repeat"]');
+const repeatButton=panel.querySelector('[data-action="toggle-repeat"]');
 repeatButton.setAttribute('aria-pressed',String(s.repeatOne));
 repeatButton.title=s.repeatOne?'Repeat current video: on':'Repeat current video: off';
-const visibilityButton=document.querySelector('[data-action="toggle-visibility"]');
+const visibilityButton=panel.querySelector('[data-action="toggle-visibility"]');
 visibilityButton.disabled=!s.queueLength;
 visibilityButton.setAttribute('aria-pressed',String(s.visible));
 visibilityButton.title=s.visible?'Hide player and pause':'Show player and resume';
 visibilityButton.setAttribute('aria-label',visibilityButton.title);
-document.querySelector('#eyeSlash').style.display=s.visible?'none':'';
-document.querySelectorAll('[data-action="skip-backward"],[data-action="skip-forward"]').forEach(b=>b.disabled=!s.seekable);
-document.querySelector('#debugEnabled').checked=s.debugEnabled;document.querySelector('#debugPanel').hidden=!s.debugEnabled;document.querySelector('#debugInfo').textContent=s.debugText;
-document.querySelector('#nowPlaying').textContent=s.queueLength?`${s.queueIndex+1} / ${s.queueLength}`:'';
-document.querySelector('[data-action=previous]').disabled=!s.hasPrevious;document.querySelector('[data-action=next]').disabled=!s.hasNext;
+panel.querySelector('[data-control="eyeSlash"]').style.display=s.visible?'none':'';
+panel.querySelectorAll('[data-action="skip-backward"],[data-action="skip-forward"]').forEach(b=>b.disabled=!s.seekable);
+
+panel.querySelector('[data-control="nowPlaying"]').textContent=s.queueLength?`${s.queueIndex+1} / ${s.queueLength}`:'';
+panel.querySelector('[data-action=previous]').disabled=!s.hasPrevious;panel.querySelector('[data-action=next]').disabled=!s.hasNext;
 const busy=sourceLoading||(s.error===null&&s.loading);status.classList.toggle('loading',busy);status.setAttribute('aria-busy',String(busy));
 status.textContent=sourceLoading?'Loading source…':s.error!==null?s.error:s.loading?s.loadingText:s.queueLength?s.playbackState:'';}
-document.querySelector('#debugEnabled').onchange=async event=>{const body=new URLSearchParams({enabled:String(event.target.checked)});await fetch(base+'/debug',{method:'POST',body});showStatus(await state());};
+start();
+    controllers.set(initial.id,{panel,button,showStatus});
+}
+function refresh(s){
+    const ids=s.players.map(player=>player.id);
+    const previousIds=[...controllers.keys()];
+    const previousIndex=previousIds.indexOf(activePlayerId);
+    for(const [id,controller] of controllers){
+        if(!ids.includes(id)){controller.panel.remove();controller.button.remove();controllers.delete(id);}
+    }
+    if(!ids.includes(activePlayerId))activePlayerId=ids[Math.max(0,Math.min(previousIndex,ids.length-1))];
+    document.querySelector('#noPlayers').hidden=ids.length>0;
+    for(const player of s.players){
+        const state={...player,recentUrls:s.recentUrls,recentUrlNames:s.recentUrlNames};
+        if(!controllers.has(player.id))mountPlayer(state);
+        controllers.get(player.id).showStatus(state);
+    }
+    document.querySelector('#debugEnabled').checked=s.debugEnabled;
+    document.querySelector('#debugPanel').hidden=!s.debugEnabled;
+    document.querySelector('#debugInfo').textContent=s.players.map(p=>p.name+'\n'+p.debugText).join('\n\n');
+    selectPlayer(activePlayerId);
+}
+document.querySelector('#debugEnabled').onchange=async event=>{const body=new URLSearchParams({enabled:String(event.target.checked)});await fetch(base+'/debug',{method:'POST',body});refresh(await readState());};
+document.querySelector('#addPlayer').onclick=async()=>{
+    const player=await(await fetch(base+'/players',{method:'POST'})).json();
+    refresh(await readState());selectPlayer(player.id,true);
+};
+async function start(){refresh(await readState());setInterval(async()=>refresh(await readState()),1500);}
 start();
 </script></body></html>
