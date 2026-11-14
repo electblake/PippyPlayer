@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-11-14
+
+### Fixed
+
+- Preserved hardware acceleration during player layout changes and restored the original video surface sizing for uncropped playback.
+- Kept cropped video aligned with its overlay and avoided window relayouts for volume changes and unchanged bounds.
+
 ## [0.13.0] - 2026-11-14
 
 ### Added

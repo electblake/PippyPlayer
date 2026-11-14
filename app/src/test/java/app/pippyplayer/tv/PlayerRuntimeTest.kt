@@ -3,7 +3,9 @@ package app.pippyplayer.tv
 import android.app.Application
 import android.content.Context
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -100,6 +102,7 @@ class PlayerRuntimeTest {
         val shared = PlaybackSettings(context)
         val runtime = PlayerRuntime(context, "1", shared)
         val metrics = runtime.resources.displayMetrics
+        val initialFlags = runtime.layout.flags
         assertEquals(0, runtime.layout.x)
         assertEquals(0, runtime.layout.y)
         runtime.configure(Position.TOP_LEFT, null, null, null, offsetX = 10, offsetY = -20)
@@ -108,6 +111,7 @@ class PlayerRuntimeTest {
         assertEquals(right, runtime.layout.x)
         assertEquals(up, runtime.layout.y)
         assertTrue(runtime.layout.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0)
+        assertEquals(initialFlags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, runtime.layout.flags)
         runtime.configure(Position.MIDDLE_CENTER, null, null, null)
         assertEquals(right, runtime.layout.x)
         assertEquals(up, runtime.layout.y)
@@ -117,7 +121,7 @@ class PlayerRuntimeTest {
         runtime.configure(null, null, null, null, offsetX = 0, offsetY = 0)
         assertEquals(0, runtime.layout.x)
         assertEquals(0, runtime.layout.y)
-        assertEquals(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, runtime.layout.flags)
+        assertEquals(initialFlags, runtime.layout.flags)
         runtime.release()
     }
 
@@ -136,8 +140,9 @@ class PlayerRuntimeTest {
         assertEquals(bottom, runtime.layout.y)
         assertEquals(width, runtime.videoSurface.layoutParams.width)
         assertEquals(height, runtime.videoSurface.layoutParams.height)
-        assertEquals(-left.toFloat(), runtime.videoSurface.translationX)
-        assertEquals(-top.toFloat(), runtime.videoSurface.translationY)
+        val videoLayout = runtime.videoSurface.layoutParams as FrameLayout.LayoutParams
+        assertEquals(-left, videoLayout.leftMargin)
+        assertEquals(-top, videoLayout.topMargin)
         assertEquals(1.5f, runtime.videoSurface.scaleX)
 
         runtime.configure(Position.TOP_LEFT, 60, null, null)
@@ -160,8 +165,40 @@ class PlayerRuntimeTest {
         runtime.configure(null, null, null, null, cropTop = 0, cropRight = 0, cropBottom = 0, cropLeft = 0)
         assertEquals(portraitWidth, runtime.layout.width)
         assertEquals(portraitHeight, runtime.layout.height)
-        assertEquals(0f, runtime.videoSurface.translationX, 0f)
-        assertEquals(0f, runtime.videoSurface.translationY, 0f)
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, videoLayout.width)
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, videoLayout.height)
+        assertEquals(0, videoLayout.leftMargin)
+        assertEquals(0, videoLayout.topMargin)
+        runtime.release()
+    }
+
+    @Test fun uncroppedPlaybackKeepsTheSurfaceMatchedAndSkipsUnchangedWindowLayouts() {
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context))
+        val actualManager = runtime.manager
+        var windowUpdates = 0
+        runtime.manager = object : WindowManager by actualManager {
+            override fun updateViewLayout(view: View, params: ViewGroup.LayoutParams) {
+                windowUpdates++
+                actualManager.updateViewLayout(view, params)
+            }
+        }
+        val surface = runtime.videoSurface
+        val initialFlags = runtime.layout.flags
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.width)
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.height)
+        runtime.configure(null, null, null, 12)
+        runtime.configure(null, null, 1.5f, null)
+        runtime.updateWindow()
+        assertEquals(12, runtime.settings.volume)
+        assertEquals(1.5f, surface.scaleX)
+        assertEquals(0, windowUpdates)
+        assertEquals(initialFlags, runtime.layout.flags)
+        runtime.configure(Position.TOP_LEFT, 50, null, null)
+        assertEquals(1, windowUpdates)
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.width)
+        assertEquals(FrameLayout.LayoutParams.MATCH_PARENT, surface.layoutParams.height)
+        runtime.configure(Position.TOP_LEFT, 50, null, null)
+        assertEquals(1, windowUpdates)
         runtime.release()
     }
 
