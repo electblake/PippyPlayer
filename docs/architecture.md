@@ -26,3 +26,7 @@ All playback operations are scoped to `/players/{playerId}`, including `/sorting
 Each player retains its source-loading exception until its next source attempt. The original exception is rethrown to Ktor and its full text is exposed in that player's state; no retry or substitute source is used. The remote displays errors separately from polling status.
 
 The UPnP server is read from the shared `playback.upnpServer` preference for every source request. The 0.12.2 migration promotes a configured Player 1 server from 0.12.0/0.12.1; otherwise it preserves the original shared server, or moves the first configured remaining player server when no shared address exists. Subsequent writes use only shared storage. Deleting players leaves the shared server intact.
+
+Playlist sorting updates Media3's custom traversal order once, using stable media IDs to map native indices. Native item indices remain unchanged; the controller reports the queue's sorted index. This avoids one full timeline update per moved item and preserves the current media period. See [Media3 custom shuffle order](https://developer.android.com/media/media3/exoplayer/playlists#setting-a-custom-shuffle-order). The same order mechanism is used for every sorting mode and reset for each new source.
+
+The TV loading view responds directly to playback-state and is-playing callbacks. Remote status polls run sequentially, and the current playback status is shown separately from retained request errors.

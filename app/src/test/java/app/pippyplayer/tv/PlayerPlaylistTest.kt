@@ -95,15 +95,90 @@ class PlayerPlaylistTest {
     @Test fun sortingPreservesDuplicateOccurrencePositionAndVolume() {
         queue.sort(PlaylistSort.NAME)
         player.applyQueueOrder(queue.itemIds)
-        assertEquals(queue.itemIds, (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId })
+        assertEquals(queue.itemIds, traversalOrder(player))
         assertEquals("2", player.currentMediaItem!!.mediaId)
-        assertEquals(1, player.currentMediaItemIndex)
+        assertEquals(2, player.currentMediaItemIndex)
+        assertEquals(1, queue.index)
         assertEquals(12_000L, player.currentPosition)
         assertEquals(0.23f, player.volume, 0f)
         queue.sort(PlaylistSort.DEFAULT)
         player.applyQueueOrder(queue.itemIds)
         assertEquals(2, player.currentMediaItemIndex)
         assertEquals(12_000L, player.currentPosition)
+    }
+
+    private fun traversalOrder(target: ExoPlayer): List<String> = buildList {
+        var index = target.currentTimeline.getFirstWindowIndex(true)
+        while (index != androidx.media3.common.C.INDEX_UNSET) {
+            add(target.getMediaItemAt(index).mediaId)
+            index = target.currentTimeline.getNextWindowIndex(index, androidx.media3.common.Player.REPEAT_MODE_OFF, true)
+        }
+    }
+
+    @Test fun twoLargeQueuesSortWithOneTimelineUpdateAndKeepPlaybackAndNavigation() {
+        val second = ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build()
+        try {
+            for (target in listOf(player, second)) {
+                val large = PlaybackQueue()
+                large.load(List(1778) { index -> PlaylistEntry("https://media.test/$index.mp4", "Video $index") })
+                target.setMediaItems(large.mediaItems(), 900, 42_000L)
+                large.select(900)
+                target.applyQueueOrder(large.itemIds)
+                target.volume = 0.37f
+                target.play()
+                var timelineChanges = 0
+                var transitions = 0
+                target.addListener(object : androidx.media3.common.Player.Listener {
+                    override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) { timelineChanges++ }
+                    override fun onMediaItemTransition(item: androidx.media3.common.MediaItem?, reason: Int) { transitions++ }
+                })
+                for (sort in listOf(PlaylistSort.RANDOM, PlaylistSort.NAME, PlaylistSort.DEFAULT)) {
+                    timelineChanges = 0
+                    transitions = 0
+                    large.sort(sort)
+                    target.applyQueueOrder(large.itemIds)
+                    assertEquals(large.itemIds, traversalOrder(target))
+                    assertEquals("900", target.currentMediaItem!!.mediaId)
+                    assertEquals(42_000L, target.currentPosition)
+                    assertEquals(0.37f, target.volume, 0f)
+                    assertTrue(target.playWhenReady)
+                    val nextId = if (target.nextMediaItemIndex == androidx.media3.common.C.INDEX_UNSET) null
+                        else target.getMediaItemAt(target.nextMediaItemIndex).mediaId
+                    val previousId = if (target.previousMediaItemIndex == androidx.media3.common.C.INDEX_UNSET) null
+                        else target.getMediaItemAt(target.previousMediaItemIndex).mediaId
+                    assertEquals(large.itemIds.getOrNull(large.index + 1), nextId)
+                    assertEquals(large.itemIds.getOrNull(large.index - 1), previousId)
+                    assertEquals(1, timelineChanges)
+                    assertEquals(0, transitions)
+                }
+                target.seekToNextMediaItem()
+                assertEquals("901", target.currentMediaItem!!.mediaId)
+                target.seekToPreviousMediaItem()
+                assertEquals("900", target.currentMediaItem!!.mediaId)
+                large.load(List(5) { PlaylistEntry("https://media.test/new$it.mp4", "New $it") })
+                target.setMediaItems(large.mediaItems(), 0, 0)
+                target.applyQueueOrder(large.itemIds)
+                assertEquals(large.itemIds, traversalOrder(target))
+            }
+        } finally { second.release() }
+    }
+
+    @Test fun loadingOverlayHidesOnReadyOrPlayingWithoutWaitingForBatchedEvents() {
+        val context = RuntimeEnvironment.getApplication()
+        val firstView = android.view.View(context)
+        val secondView = android.view.View(context)
+        val firstLoading = PlayerLoadingListener(player, firstView, android.widget.TextView(context))
+        val secondLoading = PlayerLoadingListener(player, secondView, android.widget.TextView(context))
+        firstView.visibility = android.view.View.VISIBLE
+        secondView.visibility = android.view.View.VISIBLE
+        secondLoading.onPlaybackStateChanged(androidx.media3.common.Player.STATE_READY)
+        assertEquals(android.view.View.GONE, secondView.visibility)
+        assertEquals(android.view.View.VISIBLE, firstView.visibility)
+        secondView.visibility = android.view.View.VISIBLE
+        secondLoading.onIsPlayingChanged(true)
+        assertEquals(android.view.View.GONE, secondView.visibility)
+        firstLoading.onPlaybackStateChanged(androidx.media3.common.Player.STATE_IDLE)
+        assertEquals(android.view.View.GONE, firstView.visibility)
     }
 
     @Test fun navigationAndNewSourcePreserveVolume() {

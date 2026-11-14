@@ -205,9 +205,8 @@ class PlayerService : Service() {
                             players.getValue(call.parameters["playerId"]!!).run {
                                 player.stop()
                                 player.clearMediaItems()
-                                hasPlayed = false
                                 resetDebugInfo()
-                                updateLoadingView()
+                                loadingListener.update()
                                 queue.clear()
                                 window.visibility = View.GONE
                             }
@@ -268,9 +267,8 @@ class PlayerService : Service() {
         var aspect = 16f / 9f
         lateinit var debugView: TextView
         var previousSample: PlaybackSample? = null
-        var hasPlayed = false
-        val loading get() = PlaybackLoading.from(
-            player.playbackState == Player.STATE_BUFFERING, player.playWhenReady, hasPlayed)
+        lateinit var loadingListener: PlayerLoadingListener
+        val loading get() = loadingListener.loading
         lateinit var loadingView: LinearLayout
         lateinit var loadingLabel: TextView
         var debugText = "No media loaded"
@@ -352,15 +350,13 @@ class PlayerService : Service() {
                 PixelFormat.OPAQUE)
             setLayout()
             manager.addView(window, layout)
+            loadingListener = PlayerLoadingListener(player, loadingView, loadingLabel)
+            player.addListener(loadingListener)
             player.addListener(PlayerVisibilityListener(window))
             player.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     if (mediaItem != null) queue.select(queue.itemIds.indexOf(mediaItem.mediaId))
-                    hasPlayed = player.isPlaying
                     resetDebugInfo()
-                }
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    if (isPlaying) hasPlayed = true
                 }
                 override fun onVideoSizeChanged(videoSize: VideoSize) {
                     if (videoSize.width > 0 && videoSize.height > 0) {
@@ -368,7 +364,6 @@ class PlayerService : Service() {
                         updateWindow()
                     }
                 }
-                override fun onEvents(player: Player, events: Player.Events) { updateLoadingView() }
             })
             player.addAnalyticsListener(object : AnalyticsListener {
                 override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, name: String,
@@ -386,8 +381,6 @@ class PlayerService : Service() {
         }
         fun snapshot(): JSONObject =
             JSONObject().put("id", id).put("name", "Player $id").put("url", settings.lastPlayedUrl).put("size", size)
-                .put("recentUrls", JSONArray(settings.recentUrls))
-                .put("recentUrlNames", settings.recentUrlNames)
                 .put("zoom", zoom).put("volume", volume)
                 .put("queueLength", queue.count)
                 .put("queueIndex", queue.index)
@@ -408,14 +401,9 @@ class PlayerService : Service() {
 
         fun loadQueue() {
             player.setMediaItems(queue.mediaItems(), queue.index, 0L)
+            player.applyQueueOrder(queue.itemIds)
             player.prepare()
             player.setWindowVisible(window, true)
-        }
-
-        fun updateLoadingView() {
-            val visibility = if (loading.visible) View.VISIBLE else View.GONE
-            if (loadingView.visibility != visibility) loadingView.visibility = visibility
-            if (loading.visible && loadingLabel.text != loading.label) loadingLabel.text = loading.label
         }
 
         fun setLayout() {

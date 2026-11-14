@@ -1,7 +1,9 @@
 package app.pippyplayer.tv
 
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 
 internal fun PlaybackQueue.mediaItems(): List<MediaItem> {
     val ids = itemIds
@@ -10,14 +12,10 @@ internal fun PlaybackQueue.mediaItems(): List<MediaItem> {
     }
 }
 
-/** Move the existing periods instead of replacing them, preserving current playback. */
-internal fun Player.applyQueueOrder(ids: List<String>) {
-    val currentIds = (0 until mediaItemCount).map { getMediaItemAt(it).mediaId }.toMutableList()
-    ids.forEachIndexed { target, id ->
-        val source = currentIds.indexOf(id)
-        if (source != target) {
-            moveMediaItem(source, target)
-            currentIds.add(target, currentIds.removeAt(source))
-        }
-    }
+/** Update traversal once; moving each item creates a full timeline for every move. */
+@androidx.annotation.OptIn(UnstableApi::class)
+internal fun ExoPlayer.applyQueueOrder(ids: List<String>) {
+    val indices = (0 until mediaItemCount).associateBy { getMediaItemAt(it).mediaId }
+    setShuffleOrder(DefaultShuffleOrder(ids.map { indices.getValue(it) }.toIntArray(), 0L))
+    shuffleModeEnabled = true
 }

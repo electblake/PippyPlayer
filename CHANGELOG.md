@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-11-13
+
+### Fixed
+
+- Replaced per-item playlist moves with one native traversal-order update, removing repeated full-timeline allocations when sorting large queues while preserving the current video, position, volume, and navigation order.
+- Hid each player's loading overlay directly on ready and playing callbacks instead of waiting for batched events.
+- Displayed current playback status alongside retained request errors, and prevented stale loading state from showing a spinner while playback was active.
+- Serialized remote status polling so slow responses did not accumulate overlapping requests, and stopped duplicating shared URL history inside every player snapshot.
+- Added regression coverage for two 1,778-item players, sorting and navigation, independent loading overlays, and remote status under retained errors and slow responses.
+
 ## [0.12.2] - 2026-11-13
 
 ### Fixed

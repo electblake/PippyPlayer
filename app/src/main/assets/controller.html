@@ -157,8 +157,8 @@ panel.querySelectorAll('[data-action="skip-backward"],[data-action="skip-forward
 panel.querySelector('[data-control="nowPlaying"]').textContent=s.queueLength?`${s.queueIndex+1} / ${s.queueLength}`:'';
 panel.querySelector('[data-action=previous]').disabled=!s.hasPrevious;panel.querySelector('[data-action=next]').disabled=!s.hasNext;
 if(!sourceLoading&&s.error!==null)showError(s.error);
-const busy=sourceLoading||(errorView.hidden&&s.loading);status.classList.toggle('loading',busy);status.setAttribute('aria-busy',String(busy));
-status.textContent=sourceLoading?'Loading source…':!errorView.hidden?'':s.loading?s.loadingText:s.queueLength?s.playbackState:'';}
+const busy=sourceLoading||(errorView.hidden&&s.loading&&!s.playing);status.classList.toggle('loading',busy);status.setAttribute('aria-busy',String(busy));
+status.textContent=sourceLoading?'Loading source…':s.playing?'Playing':s.loading&&errorView.hidden?s.loadingText:s.queueLength?s.playbackState:'';}
 start();
     controllers.set(initial.id,{panel,button,showStatus});
 }
@@ -186,6 +186,6 @@ document.querySelector('#addPlayer').onclick=async()=>{
     const player=await(await fetch(base+'/players',{method:'POST'})).json();
     refresh(await readState());selectPlayer(player.id,true);
 };
-async function start(){refresh(await readState());setInterval(async()=>refresh(await readState()),1500);}
+async function start(){refresh(await readState());setTimeout(start,1500);}
 start();
 </script></body></html>

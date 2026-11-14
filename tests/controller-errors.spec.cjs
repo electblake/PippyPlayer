@@ -63,3 +63,37 @@ test('HTTP response error stays readable even when state has no media error',asy
     await expect(page.locator('#player-panel-1 .primary')).toBeEnabled();
     await expect(page.locator('#player-1-status')).not.toHaveClass('loading');
 });
+
+test('playing state hides a stale spinner without hiding retained request errors',async({page})=>{
+    const state={players:[player('1'),{...player('2'),playing:true,loading:true,loadingText:'Loading…',queueLength:1778,playbackState:'Playing',error:'Previous source request failed'}],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    await page.route('http://pippy.test/**',async route=>{
+        if(new URL(route.request().url()).pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        return route.fulfill({json:state});
+    });
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await expect(page.locator('#player-2-status')).toHaveText('Playing');
+    await expect(page.locator('#player-2-status')).not.toHaveClass('loading');
+    await expect(page.locator('#player-2-status')).toHaveAttribute('aria-busy','false');
+    await expect(page.locator('#player-2-requestError')).toHaveText('Previous source request failed');
+    await expect(page.locator('#player-2-nowPlaying')).toHaveText('1 / 1778');
+});
+
+test('slow state requests do not accumulate overlapping polling requests',async({page})=>{
+    const state={players:[player('1')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    let reads=0,release;
+    await page.clock.install();
+    await page.route('http://pippy.test/**',async route=>{
+        if(new URL(route.request().url()).pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        reads++;
+        if(reads===2)await new Promise(resolve=>release=resolve);
+        return route.fulfill({json:state});
+    });
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('tab',{name:'Player 1',exact:true}).waitFor();
+    await page.clock.runFor(1600);
+    await expect.poll(()=>reads).toBe(2);
+    await page.clock.runFor(6000);
+    expect(reads).toBe(2);
+    release();
+});
