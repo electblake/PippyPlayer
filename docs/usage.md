@@ -1,5 +1,7 @@
 # First use
 
+The remote's **Recent URLs** picker remembers sources played on this TV. Open it, search or select a previous URL, then select **Play**. Each source you play moves to the top without duplicates. History is saved with the Android app's settings, shared across remote browsers, and retained after restarting the app. You can still type or paste a new URL at any time.
+
 1. Install `dist/pippyplayer.apk` on an Android TV device running Android 10 or newer.
 2. Open **PippyPlayer** from the TV launcher.
 3. Select **Allow display over other apps**, grant access, and return.

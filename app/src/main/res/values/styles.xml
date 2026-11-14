@@ -3,6 +3,19 @@
         <item name="android:fontFamily">sans</item>
         <item name="android:windowBackground">#10151E</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:colorAccent">#A5D6FF</item>
+        <item name="android:colorAccent">#9AF3C5</item>
+        <item name="android:buttonStyle">@style/PippyButton</item>
+        <item name="android:editTextStyle">@style/PippyEditText</item>
+    </style>
+    <style name="PippyButton" parent="android:style/Widget.Material.Button">
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/button_text</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+    <style name="PippyEditText" parent="android:style/Widget.Material.EditText">
+        <item name="android:background">@drawable/input_background</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">#EEF5F3</item>
     </style>
 </resources>

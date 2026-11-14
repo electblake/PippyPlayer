@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -48,33 +49,40 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF9AF3C5))) {
+                val buttonColors = ButtonDefaults.colors(
+                    containerColor = Color(0xFF26373F), contentColor = Color(0xFFEEF5F3),
+                    focusedContainerColor = Color(0xFF9AF3C5), focusedContentColor = Color(0xFF101820),
+                    pressedContainerColor = Color(0xFF5DDDA0), pressedContentColor = Color(0xFF101820),
+                    disabledContainerColor = Color(0xFF1A252C), disabledContentColor = Color(0xFF829096))
+                val buttonBorder = ButtonDefaults.border(
+                    focusedBorder = Border(BorderStroke(3.dp, Color.White)))
                 Row(Modifier.fillMaxSize().background(Color(0xFF101820)).padding(44.dp), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         Text("PIPPYPLAYER", color = Color(0xFF9AF3C5), fontSize = 18.sp)
                         Text("A little window.\nA bigger picture.", color = Color.White, fontSize = 34.sp)
-                        Text("Play a video beside whatever’s on TV. Control it from your phone.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
+                        Text("Play a video beside whateverâ€™s on TV. Control it from your phone.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
                         if (!allowed) {
-                            Button(onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())) }) {
+                            Button(colors = buttonColors, border = buttonBorder, onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())) }) {
                                 Text("Allow display over other apps")
                             }
                         }
-                        Button(enabled = allowed && !PlayerState.running, onClick = {
+                        Button(colors = buttonColors, border = buttonBorder, enabled = allowed && !PlayerState.running, onClick = {
                             startForegroundService(Intent(this@MainActivity, PlayerService::class.java))
                         }) { Text("Start PippyPlayer") }
-                        Button(enabled = PlayerState.running, onClick = {
+                        Button(colors = buttonColors, border = buttonBorder, enabled = PlayerState.running, onClick = {
                             stopService(Intent(this@MainActivity, PlayerService::class.java))
                         }) { Text("Stop PippyPlayer") }
-                        Button(enabled = PlayerState.running, onClick = {
+                        Button(colors = buttonColors, border = buttonBorder, enabled = PlayerState.running, onClick = {
                             startService(Intent(this@MainActivity, PlayerService::class.java)
                                 .putExtra("debugEnabled", !PlayerState.debugEnabled))
                         }) { Text(if (PlayerState.debugEnabled) "Debug info: On" else "Debug info: Off") }
-                        Button(onClick = {
+                        Button(colors = buttonColors, border = buttonBorder, onClick = {
                             startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
                         }) { Text("Playback settings") }
                         Text("After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
                     }
                     Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(onClick = {
+                        Button(colors = buttonColors, border = buttonBorder, onClick = {
                             startActivity(Intent(this@MainActivity, UpdateActivity::class.java))
                         }) { Text("App updates") }
                         if (PlayerState.running) {

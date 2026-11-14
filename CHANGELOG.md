@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-13
+
+### Added
+
+- Added a searchable Recent URLs picker with persistent, deduplicated playback history shared across remote browsers.
+
+### Changed
+
+- Restored Previous and Next as full-width text buttons on their own row in the web remote.
+- Made Android button focus distinct with a bright mint fill, dark text and white outline, and highlighted focused settings fields with a mint outline.
+
+### Fixed
+
+- Saved volume, including mute, in app preferences and restored it before playback so restarts and in-place updates retain the setting.
+
 ## [0.8.0] - 2026-11-13
 
 ### Added

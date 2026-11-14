@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.json.JSONArray
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -82,6 +83,7 @@ class PlayerService : Service() {
                 get("/state") {
                     val state = withContext(Dispatchers.Main) {
                         JSONObject().put("url", PlayerState.url).put("size", PlayerState.size)
+                            .put("recentUrls", JSONArray(PlaybackSettings(this@PlayerService).recentUrls))
                             .put("zoom", PlayerState.zoom).put("volume", PlayerState.volume)
                             .put("queueLength", queue.count)
                             .put("queueIndex", queue.index)
@@ -118,6 +120,7 @@ class PlayerService : Service() {
                         PlayerState.size = size
                         PlayerState.zoom = zoom
                         PlayerState.volume = volume
+                        PlaybackSettings(this@PlayerService).volume = volume
                         player.volume = volume / 100f
                         updateWindow()
                     }
@@ -132,7 +135,7 @@ class PlayerService : Service() {
                         PlayerState.url = url
                         queue.load(entries)
                         loadQueue()
-                        settings.lastPlayedUrl = url
+                        settings.recordPlayedUrl(url)
                     }
                     call.respondText("OK")
                 }
@@ -209,6 +212,7 @@ class PlayerService : Service() {
             .getString("sorting", PlaylistSort.DEFAULT.name)!!))
         PlayerState.token = UUID.randomUUID().toString()
         PlayerState.url = PlaybackSettings(this).lastPlayedUrl
+        PlayerState.volume = PlaybackSettings(this).volume
         val notifications = getSystemService(NotificationManager::class.java)
         notifications.createNotificationChannel(NotificationChannel("playback", "PippyPlayer", NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
