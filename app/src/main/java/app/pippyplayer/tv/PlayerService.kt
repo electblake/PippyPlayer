@@ -84,6 +84,7 @@ class PlayerService : Service() {
                     val state = withContext(Dispatchers.Main) {
                         JSONObject().put("url", PlayerState.url).put("size", PlayerState.size)
                             .put("recentUrls", JSONArray(PlaybackSettings(this@PlayerService).recentUrls))
+                            .put("recentUrlNames", PlaybackSettings(this@PlayerService).recentUrlNames)
                             .put("zoom", PlayerState.zoom).put("volume", PlayerState.volume)
                             .put("queueLength", queue.count)
                             .put("queueIndex", queue.index)
@@ -103,6 +104,13 @@ class PlayerService : Service() {
                             .put("elapsed", player.currentPosition).toString()
                     }
                     call.respondText(state, ContentType.Application.Json)
+                }
+                post("/recent-url-name") {
+                    val fields = call.receiveParameters()
+                    val url = fields.getAll("url")!!.single()
+                    val name = fields.getAll("name")!!.single()
+                    withContext(Dispatchers.Main) { PlaybackSettings(this@PlayerService).nameRecentUrl(url, name) }
+                    call.respondText("OK")
                 }
                 post("/debug") {
                     val fields = call.receiveParameters()

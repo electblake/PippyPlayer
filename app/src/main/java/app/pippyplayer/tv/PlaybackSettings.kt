@@ -3,6 +3,7 @@ package app.pippyplayer.tv
 import android.content.Context
 import androidx.core.content.edit
 import org.json.JSONArray
+import org.json.JSONObject
 
 class PlaybackSettings(context: Context) {
     private val preferences = context.getSharedPreferences("playback", Context.MODE_PRIVATE)
@@ -19,6 +20,15 @@ class PlaybackSettings(context: Context) {
             val urls = JSONArray(preferences.getString("recentUrls", "[]")!!)
             return List(urls.length()) { urls.getString(it) }
         }
+
+    val recentUrlNames: JSONObject
+        get() = JSONObject(preferences.getString("recentUrlNames", "{}")!!)
+
+    fun nameRecentUrl(url: String, name: String) {
+        val names = recentUrlNames
+        if (name.isEmpty()) names.remove(url) else names.put(url, name)
+        preferences.edit { putString("recentUrlNames", names.toString()) }
+    }
 
     fun recordPlayedUrl(url: String) {
         val urls = listOf(url) + recentUrls.filterNot { it == url }

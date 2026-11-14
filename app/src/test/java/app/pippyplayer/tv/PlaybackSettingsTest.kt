@@ -23,6 +23,27 @@ class PlaybackSettingsTest {
         assertEquals(emptyList<String>(), PlaybackSettings(context).recentUrls)
     }
 
+    @Test fun displayNamesPersistWithoutChangingUrlsOrHistoryOrder() {
+        val first = "https://media.test/video?q=one&name=\"A\""
+        val second = "performer:Example"
+        val settings = PlaybackSettings(context)
+        settings.recordPlayedUrl(first)
+        settings.recordPlayedUrl(second)
+        settings.nameRecentUrl(first, "My favourites 片")
+        val reopened = PlaybackSettings(context)
+        assertEquals("My favourites 片", reopened.recentUrlNames.getString(first))
+        assertEquals(listOf(second, first), reopened.recentUrls)
+        assertEquals(second, reopened.lastPlayedUrl)
+        reopened.recordPlayedUrl(first)
+        assertEquals("My favourites 片", PlaybackSettings(context).recentUrlNames.getString(first))
+        assertEquals(first, reopened.lastPlayedUrl)
+        reopened.nameRecentUrl(first, "Renamed")
+        assertEquals("Renamed", PlaybackSettings(context).recentUrlNames.getString(first))
+        reopened.nameRecentUrl(first, "")
+        assertFalse(PlaybackSettings(context).recentUrlNames.has(first))
+        assertEquals(listOf(first, second), reopened.recentUrls)
+    }
+
     @Test fun volumePersistsAcrossSettingsInstancesIncludingMute() {
         assertEquals(50, PlaybackSettings(context).volume)
         PlaybackSettings(context).volume = 23

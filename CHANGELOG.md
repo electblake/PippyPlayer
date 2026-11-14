@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-13
+
+### Added
+
+- Added an edit icon beside each Recent URL to save a searchable display name without changing its playback URL. Names persisted with app settings; clearing a name restored URL display.
+
+### Changed
+
+- Started playback immediately when selecting a Recent URL instead of only filling the URL input.
+
 ## [0.10.0] - 2026-11-13
 
 ### Added
