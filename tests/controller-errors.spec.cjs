@@ -6,7 +6,7 @@ test.use({channel:'msedge',viewport:{width:390,height:844}});
 
 let responseRevision=0;
 const stateResponse=state=>({...state,revision:++responseRevision});
-const player=id=>({sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
+const player=id=>({sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',offsetX:0,offsetY:0,sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
 
 test('source error survives polling, layout changes, tab switches and reload until the next source attempt',async({page})=>{
     const state={players:[player('1'),player('2')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
@@ -156,6 +156,45 @@ test('an older state response cannot resurrect a deleted player',async({page})=>
     await page.clock.runFor(2000);
     await expect(page.locator('#player-panel-1')).toHaveCount(0);
     await expect(page.getByRole('tab',{name:'Player 2',exact:true})).toHaveAttribute('aria-selected','true');
+});
+
+test('position collapses per player and sends only the edited screen offset',async({page})=>{
+    const state={players:[player('1'),player('2')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    const writes=[];
+    await page.route('http://pippy.test/**',async route=>{
+        const req=route.request(),url=new URL(req.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
+        expect(url.pathname).toBe('/session/players/1/config');
+        const fields=[...new URLSearchParams(req.postData())];
+        writes.push(fields);
+        for(const [field,value] of fields)state.players[0][field]=Number(value);
+        return route.fulfill({body:'OK'});
+    });
+    await page.goto('http://pippy.test/session');
+    const first=page.locator('#player-panel-1');
+    const position=first.getByText('Position',{exact:true});
+    const x=first.getByLabel('Horizontal screen offset');
+    const y=first.getByLabel('Vertical screen offset');
+    await expect(first.getByRole('button',{name:'center',exact:false}).first()).toBeVisible();
+    await position.click();
+    await expect(x).toBeHidden();
+    await expect(first.getByLabel('Size')).toBeVisible();
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await expect(page.locator('#player-panel-2').getByLabel('Horizontal screen offset')).toHaveValue('0');
+    await page.getByRole('tab',{name:'Player 1',exact:true}).click();
+    await expect(x).toBeHidden();
+    await position.click();
+    await x.fill('-24');
+    await y.fill('13');
+    await expect.poll(()=>writes).toEqual(expect.arrayContaining([[['offsetX','-24']],[['offsetY','13']]]));
+    expect(writes).toHaveLength(2);
+    await expect(first.locator('#player-1-offsetXValue')).toHaveText('-24%');
+    await expect(first.locator('#player-1-offsetYValue')).toHaveText('13%');
+    await page.reload();
+    await expect(x).toHaveValue('-24');
+    await expect(y).toHaveValue('13');
+    await expect(first.getByRole('button',{name:'bottom right',exact:true})).toHaveAttribute('aria-pressed','true');
 });
 
 test('renaming a tab updates its labels across remotes and preserves the player and its URL draft',async({page,context})=>{

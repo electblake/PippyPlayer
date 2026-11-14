@@ -175,6 +175,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             .put("sourceRequestId", sourceRequest.requestId).put("sourceRevision", sourceRequest.revision).put("sourceLoading", sourceRequest.loading)
             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
             .put("position", position.name).put("playing", player.isPlaying)
+            .put("offsetX", settings.offsetX).put("offsetY", settings.offsetY)
             .put("visible", window.visibility == View.VISIBLE)
             .put("repeatOne", player.repeatMode == Player.REPEAT_MODE_ONE)
             .put("playbackState", playbackState())
@@ -249,7 +250,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         window.visibility = View.GONE
     }
 
-    fun configure(position: Position?, size: Int?, zoom: Float?, volume: Int?) {
+    fun configure(position: Position?, size: Int?, zoom: Float?, volume: Int?, offsetX: Int? = null, offsetY: Int? = null) {
         if (position != null) this.position = position
         if (size != null) this.size = size
         if (zoom != null) this.zoom = zoom
@@ -258,7 +259,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             settings.volume = volume
             player.volume = volume / 100f
         }
-        settings.saveLayout(this.position, this.size, this.zoom)
+        settings.saveLayout(this.position, this.size, this.zoom, offsetX, offsetY)
         updateWindow()
     }
 
@@ -282,6 +283,13 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         layout.width = dimensions.first
         layout.height = dimensions.second
         layout.gravity = position.gravity
+        val x = WindowGeometry.percentPixels(settings.offsetX, metrics.widthPixels)
+        val y = WindowGeometry.percentPixels(settings.offsetY, metrics.heightPixels)
+        // WindowManager measures offsets inward from the right and bottom edges.
+        layout.x = if (layout.gravity and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.RIGHT) -x else x
+        layout.y = if (layout.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) -y else y
+        layout.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        if (x != 0 || y != 0) layout.flags = layout.flags or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         videoSurface.scaleX = zoom
         videoSurface.scaleY = zoom
     }

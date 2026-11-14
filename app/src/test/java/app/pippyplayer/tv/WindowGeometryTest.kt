@@ -6,4 +6,10 @@ class WindowGeometryTest {
     @Test fun portraitFitsHeight() { assertEquals(182 to 324, WindowGeometry.dimensions(1920, 1080, 30, 9f/16f)) }
     @Test fun squarePreservesAspect() { assertEquals(540 to 540, WindowGeometry.dimensions(1920, 1080, 50, 1f)) }
     @Test fun ultraWideFitsWidth() { assertEquals(1728 to 432, WindowGeometry.dimensions(1920, 1080, 90, 4f)) }
+    @Test fun signedPercentOffsetsScaleAndRoundToScreenPixels() {
+        assertEquals(192, WindowGeometry.percentPixels(10, 1920))
+        assertEquals(384, WindowGeometry.percentPixels(10, 3840))
+        assertEquals(-76, WindowGeometry.percentPixels(-7, 1080))
+        assertEquals(-151, WindowGeometry.percentPixels(-7, 2160))
+    }
 }

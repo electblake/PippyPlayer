@@ -3,6 +3,7 @@ package app.pippyplayer.tv
 import android.app.*
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.IBinder
 import io.ktor.http.ContentType
 import io.ktor.server.cio.CIO
@@ -73,7 +74,8 @@ class PlayerService : Service() {
                             players.getValue(call.parameters["playerId"]!!).configure(
                                 position = fields["position"]?.let(Position::valueOf),
                                 size = fields["size"]?.toInt(), zoom = fields["zoom"]?.toFloat(),
-                                volume = fields["volume"]?.toInt())
+                                volume = fields["volume"]?.toInt(),
+                                offsetX = fields["offsetX"]?.toInt(), offsetY = fields["offsetY"]?.toInt())
                         }
                         call.respondText("OK")
                     }
@@ -161,6 +163,10 @@ class PlayerService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.hasExtra("debugEnabled")) setDebugEnabled(intent.getBooleanExtra("debugEnabled", false))
         return START_NOT_STICKY
+    }
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        players.values.forEach(PlayerRuntime::updateWindow)
     }
     override fun onDestroy() {
         server.stop(0, 0)

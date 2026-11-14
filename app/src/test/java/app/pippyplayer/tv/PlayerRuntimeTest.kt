@@ -3,6 +3,7 @@ package app.pippyplayer.tv
 import android.app.Application
 import android.content.Context
 import android.view.View
+import android.view.WindowManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -92,6 +93,31 @@ class PlayerRuntimeTest {
         assertEquals(View.GONE, runtime.window.visibility)
         assertFalse(runtime.loading.visible)
         runtime.skip(10000L)
+        runtime.release()
+    }
+
+    @Test fun screenOffsetsFollowPhysicalAxesAcrossPositionPresets() {
+        val shared = PlaybackSettings(context)
+        val runtime = PlayerRuntime(context, "1", shared)
+        val metrics = runtime.resources.displayMetrics
+        assertEquals(0, runtime.layout.x)
+        assertEquals(0, runtime.layout.y)
+        runtime.configure(Position.TOP_LEFT, null, null, null, offsetX = 10, offsetY = -20)
+        val right = WindowGeometry.percentPixels(10, metrics.widthPixels)
+        val up = WindowGeometry.percentPixels(-20, metrics.heightPixels)
+        assertEquals(right, runtime.layout.x)
+        assertEquals(up, runtime.layout.y)
+        assertTrue(runtime.layout.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0)
+        runtime.configure(Position.MIDDLE_CENTER, null, null, null)
+        assertEquals(right, runtime.layout.x)
+        assertEquals(up, runtime.layout.y)
+        runtime.configure(Position.BOTTOM_RIGHT, null, null, null)
+        assertEquals(-right, runtime.layout.x)
+        assertEquals(-up, runtime.layout.y)
+        runtime.configure(null, null, null, null, offsetX = 0, offsetY = 0)
+        assertEquals(0, runtime.layout.x)
+        assertEquals(0, runtime.layout.y)
+        assertEquals(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, runtime.layout.flags)
         runtime.release()
     }
 

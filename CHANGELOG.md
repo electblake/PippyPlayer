@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added a pencil button beside each remote player tab to rename it. Names are saved per player and appear in the TV's player settings.
+- Made Position collapsible and added per-player horizontal and vertical offsets saved as percentages of the TV screen.
 
 ## [0.12.4] - 2026-11-13
 

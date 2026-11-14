@@ -15,14 +15,22 @@ class PlayerSettings internal constructor(context: Context, val id: String) {
     val size: Int get() = preferences.getInt("size", 30)
     val zoom: Float get() = preferences.getFloat("zoom", 1f)
     val position: Position get() = Position.valueOf(preferences.getString("position", Position.BOTTOM_RIGHT.name)!!)
+    val offsetX: Int get() = preferences.getInt("offsetX", 0)
+    val offsetY: Int get() = preferences.getInt("offsetY", 0)
     var sorting: PlaylistSort
         get() = PlaylistSort.valueOf(preferences.getString("sorting", PlaylistSort.DEFAULT.name)!!)
         set(value) { preferences.edit { putString("sorting", value.name) } }
     var repeatOne: Boolean
         get() = preferences.getBoolean("repeatOne", false)
         set(value) { preferences.edit { putBoolean("repeatOne", value) } }
-    fun saveLayout(position: Position, size: Int, zoom: Float) {
-        preferences.edit { putString("position", position.name); putInt("size", size); putFloat("zoom", zoom) }
+    fun saveLayout(position: Position, size: Int, zoom: Float, offsetX: Int? = null, offsetY: Int? = null) {
+        preferences.edit {
+            putString("position", position.name)
+            putInt("size", size)
+            putFloat("zoom", zoom)
+            offsetX?.let { putInt("offsetX", it) }
+            offsetY?.let { putInt("offsetY", it) }
+        }
     }
 
     val networkCacheMs: Int get() = preferences.getInt("networkCacheMs", 3000)
