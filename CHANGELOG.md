@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-13
+
+### Added
+
+- Added an eye toggle to the web remote that hides and pauses the player, then shows and resumes it without losing the current position or volume.
+- Documented Media3 device performance, Android requirements, and Sony, TCL and Hisense compatibility links.
+
+### Changed
+
+- Replaced remote playback text buttons with compact icons, accessible labels and tooltips, retaining touch targets and wrapping on narrow screens.
+- Made Play and playlist navigation show the player before resuming so playback does not continue hidden.
+
 ## [0.7.1] - 2026-11-13
 
 ### Added

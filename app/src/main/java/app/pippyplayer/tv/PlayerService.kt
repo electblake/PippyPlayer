@@ -88,6 +88,7 @@ class PlayerService : Service() {
                             .put("sorting", queue.sorting.name)
                             .put("hasPrevious", queue.hasPrevious).put("hasNext", queue.hasNext)
                             .put("position", PlayerState.position.name).put("playing", player.isPlaying)
+                            .put("visible", window.visibility == View.VISIBLE)
                             .put("playbackState", playbackState())
                             .put("loading", loading.visible).put("loadingText", loading.label)
                             .put("bufferedMs", player.totalBufferedDuration)
@@ -148,13 +149,13 @@ class PlayerService : Service() {
                 }
                 post("/next") {
                     withContext(Dispatchers.Main) {
-                        if (queue.hasNext) { player.seekToNextMediaItem(); player.play() }
+                        if (queue.hasNext) { player.seekToNextMediaItem(); player.setWindowVisible(window, true) }
                     }
                     call.respondText("OK")
                 }
                 post("/previous") {
                     withContext(Dispatchers.Main) {
-                        if (queue.hasPrevious) { player.seekToPreviousMediaItem(); player.play() }
+                        if (queue.hasPrevious) { player.seekToPreviousMediaItem(); player.setWindowVisible(window, true) }
                     }
                     call.respondText("OK")
                 }
@@ -163,7 +164,7 @@ class PlayerService : Service() {
                         lastResume = playbackSnapshot()
                         android.util.Log.i("PippyPlayer", "Resume requested: $lastResume")
                         if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition()
-                        player.play()
+                        player.setWindowVisible(window, true)
                     }
                     call.respondText("OK")
                 }
@@ -176,6 +177,12 @@ class PlayerService : Service() {
                 post("/skip-forward") {
                     withContext(Dispatchers.Main) {
                         player.seekTo((player.currentPosition + 10_000L).coerceIn(0L, player.duration))
+                    }
+                    call.respondText("OK")
+                }
+                post("/toggle-visibility") {
+                    withContext(Dispatchers.Main) {
+                        if (queue.count > 0) player.setWindowVisible(window, window.visibility != View.VISIBLE)
                     }
                     call.respondText("OK")
                 }
@@ -309,10 +316,9 @@ class PlayerService : Service() {
     }
 
     private fun loadQueue() {
-        window.visibility = View.VISIBLE
         player.setMediaItems(queue.mediaItems(), queue.index, 0L)
         player.prepare()
-        player.play()
+        player.setWindowVisible(window, true)
     }
 
     private fun updateLoadingView() {

@@ -34,6 +34,21 @@ class PlayerPlaylistTest {
 
     @After fun releasePlayer() { player.release() }
 
+    @Test fun hidingPausesAndShowingResumesWithoutLosingPositionOrVolume() {
+        val window = android.view.View(RuntimeEnvironment.getApplication())
+        player.play()
+        player.setWindowVisible(window, false)
+        assertFalse(player.playWhenReady)
+        assertEquals(android.view.View.GONE, window.visibility)
+        assertEquals(12_000L, player.currentPosition)
+        assertEquals(2, player.currentMediaItemIndex)
+        player.setWindowVisible(window, true)
+        assertTrue(player.playWhenReady)
+        assertEquals(android.view.View.VISIBLE, window.visibility)
+        assertEquals(12_000L, player.currentPosition)
+        assertEquals(0.23f, player.volume, 0f)
+    }
+
     @Test fun sortingPreservesDuplicateOccurrencePositionAndVolume() {
         queue.sort(PlaylistSort.NAME)
         player.applyQueueOrder(queue.itemIds)
