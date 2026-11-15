@@ -1,0 +1,11 @@
+query InspectScenes($filter: FindFilterType!, $sceneFilter: SceneFilterType!) {
+  findScenes(filter: $filter, scene_filter: $sceneFilter) {
+    count
+    scenes {
+      id
+      created_at
+      updated_at
+      files { duration size width height video_codec audio_codec bit_rate mod_time }
+    }
+  }
+}

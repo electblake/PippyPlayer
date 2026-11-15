@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added README screenshots of the Android app before and after starting the player server and the web remote.
 - Added repository agent instructions and a release-regression verification skill.
 - Added a Stash GraphQL schema snapshot for development reference.
+- Added linked DLNA and Stash GraphQL server references with known endpoints, sample IDs, dated metadata observations, and read-only interrogation examples.
+- Added a reusable GraphQL scene query verified against the tag and performer collections.
 
 ## [0.18.0] - 2026-11-14
 
