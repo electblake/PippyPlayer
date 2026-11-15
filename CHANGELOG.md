@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added README screenshots of the Android app before and after starting the player server and the web remote.
+- Added repository agent instructions and a release-regression verification skill.
+- Added a Stash GraphQL schema snapshot for development reference.
+
 ## [0.18.0] - 2026-11-14
 
 ### Added

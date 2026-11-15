@@ -13,6 +13,20 @@ Video requires a hardware decoder for the source codec/profile. PiP prefers exis
 
 Webpages, DRM-protected services, authenticated providers, and video-file uploads are not supported. See [playback details](docs/playback.md) and [playlist usage](docs/playlists.md).
 
+## Screenshots
+
+Main app after granting permissions:
+
+![PippyPlayer main app with permissions granted](demo1.png)
+
+Web remote:
+
+![PippyPlayer web remote with playback controls](demo2.png)
+
+Player server running, with the remote control QR code:
+
+![PippyPlayer with the server started and remote control QR code visible](demo3.png)
+
 ## Device performance and compatibility
 
 PippyPlayer uses [Android Media3 / ExoPlayer](https://developer.android.com/media/media3/exoplayer/supported-devices) and the TV's hardware video decoders. Compatibility depends on the operating system and hardware, not just the manufacturer. Android TV and Google TV models need **Android 10 / API 29 or newer** and permission to display over other apps.

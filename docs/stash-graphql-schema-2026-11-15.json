@@ -1,0 +1,1780 @@
+{
+  "queryType": {
+    "name": "Query",
+    "fields": [
+      {
+        "name": "findScene",
+        "args": [
+          {
+            "name": "id",
+            "type": {
+              "kind": "SCALAR",
+              "name": "ID",
+              "ofType": null
+            }
+          },
+          {
+            "name": "checksum",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        ],
+        "type": {
+          "kind": "OBJECT",
+          "name": "Scene",
+          "ofType": null
+        }
+      },
+      {
+        "name": "findScenes",
+        "args": [
+          {
+            "name": "scene_filter",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "SceneFilterType",
+              "ofType": null
+            }
+          },
+          {
+            "name": "scene_ids",
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int"
+                }
+              }
+            }
+          },
+          {
+            "name": "ids",
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID"
+                }
+              }
+            }
+          },
+          {
+            "name": "filter",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "FindFilterType",
+              "ofType": null
+            }
+          }
+        ],
+        "type": {
+          "kind": "NON_NULL",
+          "name": null,
+          "ofType": {
+            "kind": "OBJECT",
+            "name": "FindScenesResultType"
+          }
+        }
+      },
+      {
+        "name": "findPerformer",
+        "args": [
+          {
+            "name": "id",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "type": {
+          "kind": "OBJECT",
+          "name": "Performer",
+          "ofType": null
+        }
+      },
+      {
+        "name": "findTag",
+        "args": [
+          {
+            "name": "id",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "type": {
+          "kind": "OBJECT",
+          "name": "Tag",
+          "ofType": null
+        }
+      },
+      {
+        "name": "version",
+        "args": [],
+        "type": {
+          "kind": "NON_NULL",
+          "name": null,
+          "ofType": {
+            "kind": "OBJECT",
+            "name": "Version"
+          }
+        }
+      }
+    ]
+  },
+  "types": [
+    {
+      "kind": "ENUM",
+      "name": "CriterionModifier",
+      "fields": [],
+      "inputFields": [],
+      "enumValues": [
+        {
+          "name": "EQUALS"
+        },
+        {
+          "name": "NOT_EQUALS"
+        },
+        {
+          "name": "GREATER_THAN"
+        },
+        {
+          "name": "LESS_THAN"
+        },
+        {
+          "name": "IS_NULL"
+        },
+        {
+          "name": "NOT_NULL"
+        },
+        {
+          "name": "INCLUDES_ALL"
+        },
+        {
+          "name": "INCLUDES"
+        },
+        {
+          "name": "EXCLUDES"
+        },
+        {
+          "name": "MATCHES_REGEX"
+        },
+        {
+          "name": "NOT_MATCHES_REGEX"
+        },
+        {
+          "name": "BETWEEN"
+        },
+        {
+          "name": "NOT_BETWEEN"
+        }
+      ]
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FindFilterType",
+      "fields": [],
+      "inputFields": [
+        {
+          "name": "q",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "page",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "per_page",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sort",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "direction",
+          "type": {
+            "kind": "ENUM",
+            "name": "SortDirectionEnum",
+            "ofType": null
+          }
+        }
+      ],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FindScenesResultType",
+      "fields": [
+        {
+          "name": "count",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "duration",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "filesize",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "scenes",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Scene"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "HierarchicalMultiCriterionInput",
+      "fields": [],
+      "inputFields": [
+        {
+          "name": "value",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID"
+              }
+            }
+          }
+        },
+        {
+          "name": "modifier",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "CriterionModifier",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "depth",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "excludes",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID"
+              }
+            }
+          }
+        }
+      ],
+      "enumValues": []
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "MultiCriterionInput",
+      "fields": [],
+      "inputFields": [
+        {
+          "name": "value",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID"
+              }
+            }
+          }
+        },
+        {
+          "name": "modifier",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "CriterionModifier",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "excludes",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID"
+              }
+            }
+          }
+        }
+      ],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "Scene",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "ID",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "details",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "director",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "urls",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "date",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "production_date",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "rating100",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "organized",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "o_counter",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "interactive",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "interactive_speed",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "captions",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "VideoCaption",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Time",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Time",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "last_played_at",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Time",
+            "ofType": null
+          }
+        },
+        {
+          "name": "resume_time",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Float",
+            "ofType": null
+          }
+        },
+        {
+          "name": "play_duration",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Float",
+            "ofType": null
+          }
+        },
+        {
+          "name": "play_count",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "play_history",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Time"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "o_history",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Time"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "files",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "VideoFile"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "paths",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ScenePathsType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "scene_markers",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SceneMarker"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "galleries",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Gallery"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "studio",
+          "type": {
+            "kind": "OBJECT",
+            "name": "Studio",
+            "ofType": null
+          }
+        },
+        {
+          "name": "groups",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SceneGroup"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Tag"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "performers",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Performer"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "stash_ids",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "StashID"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "custom_fields",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Map",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "sceneStreams",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SceneStreamEndpoint"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "SceneFilterType",
+      "fields": [],
+      "inputFields": [
+        {
+          "name": "AND",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SceneFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "OR",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SceneFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "NOT",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SceneFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "details",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "director",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "oshash",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "checksum",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "phash",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "phash_distance",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "PhashDistanceCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "path",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "file_count",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "rating100",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "organized",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "o_counter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "duplicated",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "DuplicationCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "resolution",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "ResolutionCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "orientation",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "OrientationCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "framerate",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "bitrate",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "video_codec",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "audio_codec",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "duration",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "has_markers",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "is_missing",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "studios",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "HierarchicalMultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "movies",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "groups",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "HierarchicalMultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "galleries",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "HierarchicalMultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "tag_count",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performer_tags",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "HierarchicalMultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performer_favorite",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performer_age",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performers",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MultiCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performer_count",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "stash_id_endpoint",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StashIDCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "stash_ids_endpoint",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StashIDsCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "stash_id_count",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "url",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "interactive",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "interactive_speed",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "captions",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "resume_time",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "play_count",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "play_duration",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "last_played_at",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "TimestampCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "date",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "DateCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "production_date",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "DateCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "TimestampCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "TimestampCriterionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "galleries_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "GalleryFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "performers_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "PerformerFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "studios_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StudioFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "tags_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "TagFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "movies_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MovieFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "groups_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "GroupFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "markers_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SceneMarkerFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "files_filter",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "FileFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "custom_fields",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "CustomFieldCriterionInput"
+              }
+            }
+          }
+        }
+      ],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "ScenePathsType",
+      "fields": [
+        {
+          "name": "screenshot",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "preview",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "stream",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "webp",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "vtt",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sprite",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "funscript",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "interactive_heatmap",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "caption",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "SceneStreamEndpoint",
+      "fields": [
+        {
+          "name": "url",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "mime_type",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "ENUM",
+      "name": "SortDirectionEnum",
+      "fields": [],
+      "inputFields": [],
+      "enumValues": [
+        {
+          "name": "ASC"
+        },
+        {
+          "name": "DESC"
+        }
+      ]
+    },
+    {
+      "kind": "OBJECT",
+      "name": "Version",
+      "fields": [
+        {
+          "name": "version",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "hash",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "build_time",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "VideoFile",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "ID",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "path",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "basename",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "parent_folder",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "Folder",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "zip_file",
+          "type": {
+            "kind": "OBJECT",
+            "name": "BasicFile",
+            "ofType": null
+          }
+        },
+        {
+          "name": "mod_time",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Time",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "size",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int64",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "fingerprint",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fingerprints",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Fingerprint"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "format",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "width",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "height",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "duration",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "video_codec",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "audio_codec",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "frame_rate",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "bit_rate",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "scenes",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Scene"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "created_at",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Time",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "updated_at",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Time",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    }
+  ]
+}
