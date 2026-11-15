@@ -365,3 +365,50 @@ test('authoritative completed source state clears loading before its HTTP reply 
     await expect(page.locator('#player-1-status')).not.toHaveClass('loading');
     release();
 });
+
+test('recent URLs delete after the pencil, retain focus and stay deleted across players and reload',async({page})=>{
+    const first='https://media.test/first',second='https://media.test/second';
+    const state={players:[player('1'),player('2')],recentUrls:[first,second],recentUrlNames:{[first]:'First',[second]:'Second'},debugEnabled:false};
+    let deleted;
+    await page.route('http://pippy.test/**',async route=>{
+        const request=route.request(),url=new URL(request.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
+        if(url.pathname==='/session/recent-url-delete'){
+            expect(request.method()).toBe('POST');
+            deleted=new URLSearchParams(request.postData()).get('url');
+            state.recentUrls=state.recentUrls.filter(url=>url!==deleted);
+            delete state.recentUrlNames[deleted];
+            return route.fulfill({body:'OK'});
+        }
+        throw new Error('Unexpected request: '+request.url());
+    });
+    await page.goto('http://pippy.test/session');
+    await page.locator('#player-1-recentSources summary').click();
+    const list=page.locator('#player-1-recentUrls');
+    await expect(list.locator('li').first().locator('button')).toHaveCount(3);
+    await expect(list.locator('li').first().locator('button').nth(1)).toHaveAccessibleName('Edit name for First');
+    await expect(list.locator('li').first().locator('button').nth(2)).toHaveAccessibleName('Delete First from recent URLs');
+    await list.getByRole('button',{name:'Delete First from recent URLs',exact:true}).click();
+    expect(deleted).toBe(first);
+    await expect(list.locator('li')).toHaveCount(1);
+    await expect(list.getByRole('button',{name:'Delete Second from recent URLs',exact:true})).toBeFocused();
+    await expect(page.locator('#player-1-recentCount')).toHaveText('(1)');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await page.locator('#player-2-recentSources summary').click();
+    await expect(page.locator('#player-2-recentUrls li')).toHaveCount(1);
+    await page.reload();
+    await page.locator('#player-1-recentSources summary').click();
+    await expect(list.locator('li')).toHaveCount(1);
+    for(const colorScheme of ['light','dark']){
+        await page.emulateMedia({colorScheme});
+        await expect(list.locator('.recent-select')).toHaveCSS('font-size','13px');
+        await expect(list.locator('.recent-select')).toHaveCSS('border-radius','0px');
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        await page.screenshot({path:'artifacts/recent-urls-'+colorScheme+'.png',fullPage:true});
+    }
+    await list.getByRole('button',{name:'Delete Second from recent URLs',exact:true}).click();
+    await expect(page.locator('#player-1-historySearch')).toBeFocused();
+    await expect(page.locator('#player-1-historyEmpty')).toBeVisible();
+    await expect(page.locator('#player-1-recentCount')).toHaveText('(0)');
+});

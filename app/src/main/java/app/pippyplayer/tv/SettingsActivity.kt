@@ -1,7 +1,6 @@
 package app.pippyplayer.tv
 
 import android.app.Activity
-import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -20,20 +19,18 @@ class SettingsActivity : Activity() {
         val shared = PlaybackSettings(this)
         val playerIds = shared.playerIds
         var settings = playerIds.firstOrNull()?.let { shared.player(it) }
-        val padding = (32 * resources.displayMetrics.density).toInt()
+        val padding = (24 * resources.displayMetrics.density).toInt()
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding, padding, padding)
-            setBackgroundColor(Color.rgb(16, 24, 32))
         }
-        fun label(value: String, size: Float = 18f) = TextView(this).apply {
+        fun label(value: String, size: Float = 16f) = TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(Color.WHITE)
             setPadding(0, padding / 4, 0, padding / 4)
             content.addView(this)
         }
-        label("Playback settings", 28f)
+        label("Setting", 24f)
         val serverLabel = label("UPnP server URL (shared by all players)")
         val server = EditText(this).apply {
             id = View.generateViewId()
@@ -52,7 +49,7 @@ class SettingsActivity : Activity() {
                 finish()
             }
         })
-        label("Player buffer settings", 24f)
+        label("Player buffer settings", 20f)
         if (playerIds.isEmpty()) label("Add a player from the remote to configure playback settings.", 16f)
         val playerSelector = Spinner(this).apply {
             contentDescription = "Player"

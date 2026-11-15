@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-14
+
+### Added
+
+- Added a delete icon after each recent URL's edit pencil. Deletion removes the saved URL and display name across remotes while preserving current playback and keyboard focus.
+
+### Changed
+
+- Replaced remote history bubbles with compact flat rows and smaller text, reduced control spacing, and adopted system light and dark colors.
+- Replaced the Android home screen's custom pill buttons and oversized promotional text with native controls, smaller text, and a scrollable layout.
+- Moved App updates into the main Android button list and placed Setting at the bottom.
+- Removed custom Android button and input backgrounds and used native light and dark themes throughout app screens.
+
 ## [0.13.1] - 2026-11-14
 
 ### Fixed

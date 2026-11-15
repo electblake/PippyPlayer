@@ -8,17 +8,14 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import android.view.View
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.tv.material3.*
+import androidx.compose.ui.viewinterop.AndroidView
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -48,64 +45,89 @@ class MainActivity : ComponentActivity() {
             return
         }
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xFF9AF3C5))) {
-                val buttonColors = ButtonDefaults.colors(
-                    containerColor = Color(0xFF26373F), contentColor = Color(0xFFEEF5F3),
-                    focusedContainerColor = Color(0xFF9AF3C5), focusedContentColor = Color(0xFF101820),
-                    pressedContainerColor = Color(0xFF5DDDA0), pressedContentColor = Color(0xFF101820),
-                    disabledContainerColor = Color(0xFF1A252C), disabledContentColor = Color(0xFF829096))
-                val buttonBorder = ButtonDefaults.border(
-                    focusedBorder = Border(BorderStroke(3.dp, Color.White)))
-                Row(Modifier.fillMaxSize().background(Color(0xFF101820)).padding(44.dp), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Text("PIPPYPLAYER", color = Color(0xFF9AF3C5), fontSize = 18.sp)
-                        Text("A little window.\nA bigger picture.", color = Color.White, fontSize = 34.sp)
-                        Text("Play a video beside whateverâ€™s on TV. Control it from your phone.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
-                        if (!allowed) {
-                            Button(colors = buttonColors, border = buttonBorder, onClick = { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())) }) {
-                                Text("Allow display over other apps")
-                            }
-                        }
-                        Button(colors = buttonColors, border = buttonBorder, enabled = allowed && !PlayerState.running, onClick = {
-                            startForegroundService(Intent(this@MainActivity, PlayerService::class.java))
-                        }) { Text("Start PippyPlayer") }
-                        Button(colors = buttonColors, border = buttonBorder, enabled = PlayerState.running, onClick = {
-                            stopService(Intent(this@MainActivity, PlayerService::class.java))
-                        }) { Text("Stop PippyPlayer") }
-                        Button(colors = buttonColors, border = buttonBorder, enabled = PlayerState.running, onClick = {
-                            startService(Intent(this@MainActivity, PlayerService::class.java)
-                                .putExtra("debugEnabled", !PlayerState.debugEnabled))
-                        }) { Text(if (PlayerState.debugEnabled) "Debug info: On" else "Debug info: Off") }
-                        Button(colors = buttonColors, border = buttonBorder, onClick = {
-                            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                        }) { Text("Playback settings") }
-                        Text("After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
-                    }
-                    Column(Modifier.width(280.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(colors = buttonColors, border = buttonBorder, onClick = {
-                            startActivity(Intent(this@MainActivity, UpdateActivity::class.java))
-                        }) { Text("App updates") }
-                        if (PlayerState.running) {
-                            val origin = if (intent.hasExtra("controller_origin")) controllerOrigin
-                                else "$controllerOrigin:${PlayerState.controllerPort}"
-                            val url = "$origin/${PlayerState.token}"
-                            val qr = remember(url) {
-                                val matrix = QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 420, 420, mapOf(EncodeHintType.MARGIN to 2))
-                                createBitmap(420, 420).apply {
-                                    setPixels(IntArray(420 * 420) { i -> if (matrix[i % 420, i / 420]) android.graphics.Color.BLACK else android.graphics.Color.WHITE }, 0, 420, 0, 0, 420, 420)
-                                }.asImageBitmap()
-                            }
-                            Image(qr, "Scan to open your PippyPlayer controller", Modifier.size(230.dp))
-                            Text("Scan. Choose. Play.", color = Color.White, fontSize = 22.sp)
-                            Text("Connect your phone to the same home network as this TV.", color = Color(0xFFBAC8CD), fontSize = 14.sp)
-                            Text(url, color = Color(0xFF9AF3C5), fontSize = 12.sp)
-                        } else {
-                            Text("Your phone is the remote.", color = Color.White, fontSize = 26.sp)
-                            Text("Start PippyPlayer to show your private controller QR code. No companion app needed.", color = Color(0xFFBAC8CD), fontSize = 18.sp)
-                        }
-                    }
+            AndroidView(factory = { createContent() }, update = {
+                permission.visibility = if (allowed) View.GONE else View.VISIBLE
+                start.isEnabled = allowed && !PlayerState.running
+                stop.isEnabled = PlayerState.running
+                debug.isEnabled = PlayerState.running
+                debug.text = if (PlayerState.debugEnabled) "Debug info: On" else "Debug info: Off"
+                val origin = if (intent.hasExtra("controller_origin")) controllerOrigin
+                    else "$controllerOrigin:${PlayerState.controllerPort}"
+                val url = "$origin/${PlayerState.token}"
+                qr.visibility = if (PlayerState.running) View.VISIBLE else View.GONE
+                address.visibility = if (PlayerState.running) View.VISIBLE else View.GONE
+                instructions.text = if (PlayerState.running) "Scan to open the remote. Connect your phone to the same network as this TV."
+                    else "Start PippyPlayer to show the remote’s QR code."
+                if (PlayerState.running && address.text.toString() != url) {
+                    val matrix = QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, 420, 420, mapOf(EncodeHintType.MARGIN to 2))
+                    qr.setImageBitmap(createBitmap(420, 420).apply {
+                        setPixels(IntArray(420 * 420) { i -> if (matrix[i % 420, i / 420]) android.graphics.Color.BLACK else android.graphics.Color.WHITE }, 0, 420, 0, 0, 420, 420)
+                    })
+                    address.text = url
                 }
-            }
+            })
         }
+    }
+
+    private lateinit var permission: Button
+    private lateinit var start: Button
+    private lateinit var stop: Button
+    private lateinit var debug: Button
+    private lateinit var qr: ImageView
+    private lateinit var address: TextView
+    private lateinit var instructions: TextView
+
+    private fun createContent(): View {
+        val padding = (24 * resources.displayMetrics.density).toInt()
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(padding, padding, padding, padding)
+        }
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val remote = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, 0, 0, 0)
+        }
+        content.addView(actions, LinearLayout.LayoutParams(0, -2, 1f))
+        content.addView(remote, LinearLayout.LayoutParams(0, -2, 1f))
+        fun label(parent: LinearLayout, value: String, size: Float = 16f) = TextView(this).apply {
+            text = value
+            textSize = size
+            setPadding(0, 0, 0, padding / 3)
+            parent.addView(this)
+        }
+        fun action(value: String, click: () -> Unit) = Button(this).apply {
+            text = value
+            isAllCaps = false
+            setOnClickListener { click() }
+            actions.addView(this, LinearLayout.LayoutParams(-1, -2))
+        }
+        label(actions, "PippyPlayer", 24f)
+        label(actions, "Play video over other apps. Control playback from your phone.")
+        permission = action("Allow display over other apps") {
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri()))
+        }
+        start = action("Start PippyPlayer") {
+            startForegroundService(Intent(this, PlayerService::class.java))
+        }
+        stop = action("Stop PippyPlayer") {
+            stopService(Intent(this, PlayerService::class.java))
+        }
+        debug = action("Debug info: Off") {
+            startService(Intent(this, PlayerService::class.java).putExtra("debugEnabled", !PlayerState.debugEnabled))
+        }
+        action("App updates") { startActivity(Intent(this, UpdateActivity::class.java)) }
+        action("Setting") { startActivity(Intent(this, SettingsActivity::class.java)) }
+        label(remote, "Remote control", 20f)
+        instructions = label(remote, "")
+        qr = ImageView(this).apply {
+            contentDescription = "Scan to open your PippyPlayer controller"
+            adjustViewBounds = true
+            val size = (200 * resources.displayMetrics.density).toInt()
+            remote.addView(this, LinearLayout.LayoutParams(size, size))
+        }
+        address = label(remote, "", 14f).apply { setTextIsSelectable(true) }
+        label(remote, "After choosing a video, press Home and open another app. Stop PippyPlayer to close the controller and video.", 14f)
+        return ScrollView(this).apply { addView(content) }
     }
 }

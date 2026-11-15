@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.Button
@@ -22,17 +21,14 @@ class CrashActivity : Activity() {
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding, padding, padding)
-            setBackgroundColor(Color.rgb(16, 24, 32))
         }
         content.addView(TextView(this).apply {
             setText(R.string.crash_title)
             textSize = 26f
-            setTextColor(Color.WHITE)
         })
         content.addView(TextView(this).apply {
             setText(R.string.crash_description)
             textSize = 16f
-            setTextColor(Color.LTGRAY)
         })
         val actions = LinearLayout(this)
         val copy = Button(this).apply {
@@ -66,7 +62,6 @@ class CrashActivity : Activity() {
                 text = report
                 textSize = 14f
                 typeface = Typeface.MONOSPACE
-                setTextColor(Color.WHITE)
                 setPadding(0, padding / 2, 0, padding / 2)
             })
         }

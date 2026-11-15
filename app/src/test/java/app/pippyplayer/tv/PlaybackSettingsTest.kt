@@ -162,6 +162,24 @@ class PlaybackSettingsTest {
         assertEquals(listOf(first, second), shared.recentUrls)
     }
 
+    @Test fun deletingRecentUrlPersistsWithoutChangingPlayback() {
+        val first = "https://media.test/first"
+        val second = "https://media.test/second"
+        shared.recordPlayedUrl(first)
+        shared.recordPlayedUrl(second)
+        shared.nameRecentUrl(first, "First")
+        shared.nameRecentUrl(second, "Second")
+        shared.player("1").lastPlayedUrl = first
+
+        shared.removeRecentUrl(first)
+
+        val reopened = PlaybackSettings(context)
+        assertEquals(listOf(second), reopened.recentUrls)
+        assertFalse(reopened.recentUrlNames.has(first))
+        assertEquals("Second", reopened.recentUrlNames.getString(second))
+        assertEquals(first, reopened.player("1").lastPlayedUrl)
+    }
+
     @Test fun volumePersistsAcrossSettingsInstancesIncludingMute() {
         assertEquals(50, shared.player("1").volume)
         shared.player("1").volume = 23

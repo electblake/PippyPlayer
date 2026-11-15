@@ -1,7 +1,6 @@
 package app.pippyplayer.tv
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -36,20 +35,18 @@ class UpdateActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installedVersion = packageManager.getPackageInfo(packageName, 0).versionName!!
-        val padding = (32 * resources.displayMetrics.density).toInt()
+        val padding = (24 * resources.displayMetrics.density).toInt()
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding, padding, padding)
-            setBackgroundColor(Color.rgb(16, 24, 32))
         }
-        fun label(value: String, size: Float = 18f) = TextView(this).apply {
+        fun label(value: String, size: Float = 16f) = TextView(this).apply {
             text = value
             textSize = size
-            setTextColor(Color.WHITE)
             setPadding(0, padding / 4, 0, padding / 4)
             content.addView(this)
         }
-        label(getString(R.string.updates_title), 28f)
+        label(getString(R.string.updates_title), 24f)
         label(getString(R.string.updates_installed, installedVersion))
         label(getString(R.string.updates_explanation), 16f)
         status = label("").apply { accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE }

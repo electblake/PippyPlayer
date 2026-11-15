@@ -78,6 +78,16 @@ class PlaybackSettings(private val context: Context) {
         shared.edit { putString("recentUrlNames", names.toString()) }
     }
 
+    fun removeRecentUrl(url: String) {
+        val urls = recentUrls.filterNot { it == url }
+        val names = recentUrlNames
+        names.remove(url)
+        shared.edit {
+            putString("recentUrls", JSONArray(urls).toString())
+            putString("recentUrlNames", names.toString())
+        }
+    }
+
     fun recordPlayedUrl(url: String) {
         val urls = listOf(url) + recentUrls.filterNot { it == url }
         shared.edit { putString("recentUrls", JSONArray(urls).toString()) }

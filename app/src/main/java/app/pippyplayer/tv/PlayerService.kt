@@ -45,6 +45,11 @@ class PlayerService : Service() {
                     }
                     call.respondText(state, ContentType.Application.Json)
                 }
+                post("/recent-url-delete") {
+                    val url = call.receiveParameters().getAll("url")!!.single()
+                    withContext(Dispatchers.Main) { shared.removeRecentUrl(url) }
+                    call.respondText("OK")
+                }
                 post("/recent-url-name") {
                     val fields = call.receiveParameters()
                     val url = fields.getAll("url")!!.single()
