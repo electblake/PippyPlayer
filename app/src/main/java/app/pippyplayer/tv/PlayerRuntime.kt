@@ -132,7 +132,6 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         }
         window = FrameLayout(this@PlayerRuntime).apply {
             setBackgroundColor(android.graphics.Color.BLACK)
-            keepScreenOn = true
             addView(videoSurface, FrameLayout.LayoutParams(-1, -1, Gravity.TOP or Gravity.LEFT))
             addView(debugView, FrameLayout.LayoutParams(-1, -2))
             addView(loadingView, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
@@ -316,14 +315,19 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     private fun syncQueueWindow() {
         if (queue.count == 0 || updatingQueueWindow) return
         updatingQueueWindow = true
-        // Keep the current MediaSource/decoder and position; replace only its neighbours.
-        val current = player.currentMediaItemIndex
-        player.removeMediaItems(current + 1, player.mediaItemCount)
-        player.removeMediaItems(0, current)
         val items = queue.windowItems()
-        val selected = queue.index - queue.windowStart
-        if (selected > 0) player.addMediaItems(0, items.subList(0, selected))
-        if (selected + 1 < items.size) player.addMediaItems(items.subList(selected + 1, items.size))
+        // Retain matching MediaSources, including the next item's preloaded samples.
+        val wanted = items.map { it.mediaId }.toSet()
+        for (index in player.mediaItemCount - 1 downTo 0) {
+            if (player.getMediaItemAt(index).mediaId !in wanted) player.removeMediaItem(index)
+        }
+        for ((index, item) in items.withIndex()) {
+            val existing = (index until player.mediaItemCount).firstOrNull {
+                player.getMediaItemAt(it).mediaId == item.mediaId
+            }
+            if (existing == null) player.addMediaItem(index, item)
+            else if (existing != index) player.moveMediaItem(existing, index)
+        }
         updatingQueueWindow = false
     }
 

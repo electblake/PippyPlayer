@@ -55,9 +55,13 @@ class PlayerPlaylistTest {
         window.visibility = android.view.View.GONE
         val listener = PlayerVisibilityListener(window)
         listener.onIsPlayingChanged(false)
+        assertFalse(window.keepScreenOn)
         assertEquals(android.view.View.GONE, window.visibility)
         listener.onIsPlayingChanged(true)
+        assertTrue(window.keepScreenOn)
         assertEquals(android.view.View.VISIBLE, window.visibility)
+        listener.onIsPlayingChanged(false)
+        assertFalse(window.keepScreenOn)
     }
 
     @Test fun repeatOneLoopsCurrentItemAndCanBeDisabledWithoutChangingPlayback() {

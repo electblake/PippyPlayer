@@ -9,6 +9,7 @@ internal class PlayerVisibilityListener(private val window: View) : Player.Liste
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
+        window.keepScreenOn = isPlaying
         if (isPlaying) window.visibility = View.VISIBLE
     }
 }

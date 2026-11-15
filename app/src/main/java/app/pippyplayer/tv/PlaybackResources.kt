@@ -2,6 +2,7 @@ package app.pippyplayer.tv
 
 import android.content.Context
 import android.os.HandlerThread
+import android.os.Process
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.Util
@@ -10,6 +11,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.cache.CacheDataSource
@@ -20,7 +22,7 @@ import java.io.File
 /** Service-owned resources; runtimes release their players before these are closed. */
 @androidx.annotation.OptIn(UnstableApi::class)
 internal class PlaybackResources(private val context: Context) {
-    private val thread = HandlerThread("PippyPlayback").apply { start() }
+    private val thread = HandlerThread("PippyPlayback", Process.THREAD_PRIORITY_AUDIO).apply { start() }
     val playbackLooper get() = thread.looper
     val loadControl = PipLoadControl(3000)
     private val database = StandaloneDatabaseProvider(context)
@@ -28,11 +30,14 @@ internal class PlaybackResources(private val context: Context) {
         LeastRecentlyUsedCacheEvictor(128L * 1024 * 1024), database)
     private val upstream = DefaultHttpDataSource.Factory()
 
+    internal fun progressiveDataSourceFactory(network: DataSource.Factory): DataSource.Factory =
+        CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(network)
+            .setFlags(0) // Read upstream while another player owns a cache write span.
+
     fun mediaSourceFactory(listener: TransferListener): MediaSource.Factory {
         val network = DefaultDataSource.Factory(context, upstream).setTransferListener(listener)
         val cached = DefaultMediaSourceFactory(DefaultDataSource.Factory(context,
-            CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(network)
-                .setFlags(CacheDataSource.FLAG_BLOCK_ON_CACHE)))
+            progressiveDataSourceFactory(network)))
         val streaming = DefaultMediaSourceFactory(network)
         return object : MediaSource.Factory by streaming {
             override fun createMediaSource(mediaItem: MediaItem): MediaSource {

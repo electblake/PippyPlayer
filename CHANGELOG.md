@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-14
+
+### Fixed
+
+- Prevented players reading the same uncached video from waiting behind another player's cache writer; completed cached spans remain shared.
+- Moved diagnostic file writes to one background worker and removed per-event storage synchronization from playback and layout callbacks. Reports wait for queued writes; abrupt process termination can lose pending events.
+- Restored Android audio scheduling priority for the shared playback thread.
+- Preserved matching playlist media sources and preloaded samples during navigation and unchanged sorting instead of rebuilding neighbouring sources.
+- Released the screen-awake request when playback pauses, buffers, ends, or stops.
+- Bounded playlist request coordination to 64 shared locks instead of retaining a lock for every URL ever loaded.
+
 ## [0.17.0] - 2026-11-14
 
 ### Added

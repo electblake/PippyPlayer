@@ -23,6 +23,25 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class)
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class PlayerRuntimeTest {
+    @Test fun navigationAndUnchangedSortingRetainNeighbourMediaSources() {
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
+        runtime.queue.load(List(5) { PlaylistEntry("https://media.test/$it.mp4", "$it") })
+        runtime.loadQueue()
+        fun identities() = (0 until runtime.player.mediaItemCount).associate {
+            runtime.player.getMediaItemAt(it).mediaId to runtime.player.currentTimeline.getUidOfPeriod(it)
+        }
+        val initial = identities()
+        runtime.sort(PlaylistSort.DEFAULT)
+        assertEquals(initial, identities())
+        runtime.next()
+        val next = identities()
+        assertEquals(initial.getValue("0"), next.getValue("0"))
+        assertEquals(initial.getValue("1"), next.getValue("1"))
+        runtime.previous()
+        assertEquals(initial, identities())
+        runtime.release()
+    }
+
     private val context: Context get() = RuntimeEnvironment.getApplication()
     private lateinit var resources: PlaybackResources
     @After fun releaseResources() { resources.release() }

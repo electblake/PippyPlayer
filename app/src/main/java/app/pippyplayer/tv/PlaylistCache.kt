@@ -6,7 +6,6 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.security.MessageDigest
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
@@ -28,7 +27,7 @@ internal class PlaylistCache(
         val key = MessageDigest.getInstance("SHA-256").digest(resolved.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
         val file = File(directory, "$key.json")
-        return sources.computeIfAbsent(file.absolutePath) { Mutex() }.withLock {
+        return sources[(file.absolutePath.hashCode() and Int.MAX_VALUE) % sources.size].withLock {
             val (cached, startedGeneration) = withContext(Dispatchers.IO) {
                 synchronized(filesLock) {
                     val cached = if (hours > 0 && file.exists()) {
@@ -82,7 +81,8 @@ internal class PlaylistCache(
     }
 
     private companion object {
-        val sources = ConcurrentHashMap<String, Mutex>()
+        // Bound coordination memory even when sources contain unique query strings.
+        val sources = Array(64) { Mutex() }
         val filesLock = Any()
         var generation = 0L
     }

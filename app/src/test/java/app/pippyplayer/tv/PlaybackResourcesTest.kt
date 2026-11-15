@@ -19,6 +19,24 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class)
 @androidx.annotation.OptIn(UnstableApi::class)
 class PlaybackResourcesTest {
+    @Test(timeout = 5000) fun concurrentReadersDoNotWaitForAnotherPlayersCacheWriter() {
+        val resources = PlaybackResources(org.robolectric.RuntimeEnvironment.getApplication())
+        val bytes = ByteArray(1024) { it.toByte() }
+        val factory = resources.progressiveDataSourceFactory(
+            androidx.media3.datasource.DataSource.Factory { androidx.media3.datasource.ByteArrayDataSource(bytes) })
+        val spec = androidx.media3.datasource.DataSpec(android.net.Uri.parse("https://media.test/shared.mp4"))
+        val first = factory.createDataSource()
+        val second = factory.createDataSource()
+        first.open(spec)
+        second.open(spec)
+        val actual = ByteArray(bytes.size)
+        assertEquals(bytes.size, second.read(actual, 0, actual.size))
+        assertArrayEquals(bytes, actual)
+        second.close()
+        first.close()
+        resources.release()
+    }
+
     private val timeline = SinglePeriodTimeline(60_000_000L, true, false, false, null,
         MediaItem.fromUri("https://media.test/movie.mp4"))
     private val period = MediaPeriodId(timeline.getUidOfPeriod(0))
