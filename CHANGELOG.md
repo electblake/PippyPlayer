@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-14
+
+### Added
+
+- Cached parsed M3U and DLNA playlists on disk across players and app restarts, with one shared fetch for concurrent requests to the same source.
+- Added Playlist cache settings with a default duration of 24 hours, an editable duration in hours, and 0 to disable caching.
+- Added Clear playlist cache without deleting saved URLs, names, player settings, or active playback. In-progress downloads cannot restore a cache cleared during their fetch.
+
+### Fixed
+
+- Kept the native Android home screen at full width when starting playback, preventing buttons and columns from shrinking and shifting.
+
 ## [0.14.0] - 2026-11-14
 
 ### Added

@@ -15,6 +15,8 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -45,7 +47,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         setContent {
-            AndroidView(factory = { createContent() }, update = {
+            AndroidView(modifier = Modifier.fillMaxSize(), factory = { createContent() }, update = {
                 permission.visibility = if (allowed) View.GONE else View.VISIBLE
                 start.isEnabled = allowed && !PlayerState.running
                 stop.isEnabled = PlayerState.running

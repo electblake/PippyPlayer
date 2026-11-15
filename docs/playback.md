@@ -20,9 +20,17 @@ The overlay uses permission-based `TYPE_APPLICATION_OVERLAY` to support all nine
 
 ## Android playback settings
 
-Open **Playback settings** to set the **UPnP server URL** and **Resume buffer after a stall (milliseconds)**. Both are saved on Android. The existing saved cache value is now the rebuffer threshold. Stop and start the PippyPlayer service from the TV app to apply a changed threshold. Thresholds greater than 10/20 seconds also raise the respective forward-buffer time targets; the byte target remains unchanged.
+Open **Setting** to set the **UPnP server URL** and **Resume buffer after a stall (milliseconds)**. Both are saved on Android. The existing saved cache value is now the rebuffer threshold. Stop and start the PippyPlayer service from the TV app to apply a changed threshold. Thresholds greater than 10/20 seconds also raise the respective forward-buffer time targets; the byte target remains unchanged.
 
 The last loaded source URL remains saved across Stop, remote reloads and app restarts. Stop clears playback but keeps the URL. Playback does not start automatically.
+
+## Playlist cache
+
+Setting includes **Cache duration (hours)** (24 by default; 0 disables caching) and **Clear playlist cache**. Parsed M3U and DLNA playlists are cached in app-private storage across players and restarts. Concurrent requests for the same resolved playlist share a single fetch. Expiry is measured from the last completed fetch and uses the current duration setting. Changing the UPnP server selects a separate cache entry.
+
+Clear playlist cache removes only cached playlist metadata. Saved sources, display names, player settings, and playing queues remain unchanged. The next playlist load fetches fresh data; an already-running fetch does not refill a cache cleared while it was downloading. Video bytes, direct streams, and live HLS manifests are not cached by this feature. Android may reclaim the app cache.
+
+Caching avoids repeated playlist downloads and parsing; it does not reduce the decoder resources needed by simultaneous videos or establish a fix for a device-wide freeze.
 
 ## Playback diagnostics
 

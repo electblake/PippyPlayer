@@ -52,6 +52,21 @@ class SettingsActivityTest {
         }
     }
 
+    @Test fun cacheDurationSavesIndependentlyOfServerAndPlayerSettings() {
+        val settings = PlaybackSettings(context)
+        settings.upnpServer = "http://saved.test"
+        settings.player("1").volume = 37
+        Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->
+            val views = descendants(controller.get().window.decorView)
+            views.filterIsInstance<EditText>().single { it.contentDescription == "Playlist cache duration in hours" }
+                .setText("6")
+            views.filterIsInstance<Button>().single { it.text == "Save cache duration" }.performClick()
+            assertEquals(6, PlaybackSettings(context).playlistCacheHours)
+            assertEquals("http://saved.test", settings.upnpServer)
+            assertEquals(37, settings.player("1").volume)
+        }
+    }
+
     @Test fun sharedServerCanBeSavedWithoutAnyPlayers() {
         PlaybackSettings(context).removePlayer("1")
         Robolectric.buildActivity(SettingsActivity::class.java).setup().use { controller ->

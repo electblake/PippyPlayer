@@ -12,8 +12,18 @@ import android.widget.TextView
 import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.AdapterView
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class SettingsActivity : Activity() {
+    private val scope = MainScope()
+
+    override fun onDestroy() {
+        scope.cancel()
+        super.onDestroy()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val shared = PlaybackSettings(this)
@@ -47,6 +57,37 @@ class SettingsActivity : Activity() {
             setOnClickListener {
                 shared.upnpServer = server.text.toString().trim()
                 finish()
+            }
+        })
+        label("Playlist cache", 20f)
+        val hoursLabel = label("Cache duration (hours)")
+        val hours = EditText(this).apply {
+            id = View.generateViewId()
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setSingleLine(true)
+            setText(shared.playlistCacheHours.toString())
+            contentDescription = "Playlist cache duration in hours"
+        }
+        hoursLabel.labelFor = hours.id
+        content.addView(hours)
+        label("Reuse downloaded playlists across all players. 0 disables caching. Video streams are not cached.", 16f)
+        content.addView(Button(this).apply {
+            text = "Save cache duration"
+            setOnClickListener {
+                shared.playlistCacheHours = hours.text.toString().toInt()
+                finish()
+            }
+        })
+        val cacheStatus = label("", 14f).apply {
+            accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        }
+        content.addView(Button(this).apply {
+            text = "Clear playlist cache"
+            setOnClickListener {
+                scope.launch {
+                    PlaylistCache(this@SettingsActivity).clear()
+                    cacheStatus.text = "Playlist cache cleared. Saved settings and current playback are unchanged."
+                }
             }
         })
         label("Player buffer settings", 20f)

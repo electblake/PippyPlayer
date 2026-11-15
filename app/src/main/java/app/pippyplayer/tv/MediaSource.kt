@@ -4,12 +4,17 @@ import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URI
 
+internal data class LoadedPlaylist(val entries: List<PlaylistEntry>, val cacheable: Boolean)
+
 object MediaSource {
     fun load(inputUrl: String, upnpServer: String): List<PlaylistEntry> {
-        val url = resolveUrl(inputUrl, upnpServer)
+        return read(resolveUrl(inputUrl, upnpServer)).entries
+    }
+
+    internal fun read(url: String): LoadedPlaylist {
         val uri = URI(url)
         return when (uri.scheme.lowercase()) {
-            "upnp" -> DlnaPlaylist().load(url)
+            "upnp" -> LoadedPlaylist(DlnaPlaylist().load(url), true)
             "http", "https" -> {
                 val connection = uri.toURL().openConnection() as HttpURLConnection
                 val entries = connection.inputStream.buffered().use { input ->
@@ -23,15 +28,16 @@ object MediaSource {
                     input.reset()
                     val source = connection.url.toURI()
                     if (isPlaylist(source, connection.contentType, bytes.toString("UTF-8"))) {
-                        VideoPlaylist.parse(input.reader(Charsets.UTF_8).readText(), source)
+                        val playlist = VideoPlaylist.parse(input.reader(Charsets.UTF_8).readText(), source)
+                        LoadedPlaylist(playlist, playlist.none { it.mimeType == "application/x-mpegURL" })
                     } else {
-                        listOf(PlaylistEntry(url, null, mimeType = connection.contentType?.substringBefore(';')?.trim()))
+                        LoadedPlaylist(listOf(PlaylistEntry(url, null, mimeType = connection.contentType?.substringBefore(';')?.trim())), false)
                     }
                 }
                 connection.disconnect()
                 entries
             }
-            else -> listOf(PlaylistEntry(url, null))
+            else -> LoadedPlaylist(listOf(PlaylistEntry(url, null)), false)
         }
     }
 

@@ -98,6 +98,10 @@ class PlaybackSettings(private val context: Context) {
         return PlayerSettings(context, id)
     }
 
+    var playlistCacheHours: Int
+        get() = shared.getInt("playlistCacheHours", 24)
+        set(value) { shared.edit { putInt("playlistCacheHours", value) } }
+
     var debugEnabled: Boolean
         get() = shared.getBoolean("debugEnabled", false)
         set(value) { shared.edit { putBoolean("debugEnabled", value) } }

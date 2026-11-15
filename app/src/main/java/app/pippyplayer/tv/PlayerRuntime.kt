@@ -32,7 +32,10 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 
 @androidx.annotation.OptIn(UnstableApi::class)
-internal class PlayerRuntime(context: android.content.Context, val id: String, private val shared: PlaybackSettings, val sourceRequest: SourceRequest = SourceRequest()) : android.content.ContextWrapper(context) {
+internal class PlayerRuntime(context: android.content.Context, val id: String, private val shared: PlaybackSettings,
+    val sourceRequest: SourceRequest = SourceRequest { url, server ->
+        PlaylistCache(context).load(url, server, shared.playlistCacheHours)
+    }) : android.content.ContextWrapper(context) {
     val settings = shared.player(id)
     private var playWhenLoaded = true
     private var showWhenLoaded = true
