@@ -35,6 +35,7 @@ class PlayerService : Service() {
                         JSONObject().put("revision", ++stateRevision).put("players", JSONArray(players.values.map { it.snapshot() }))
                             .put("recentUrls", JSONArray(shared.recentUrls))
                             .put("recentUrlNames", shared.recentUrlNames)
+                            .put("favourites", shared.favouritesJson())
                             .put("debugEnabled", PlayerState.debugEnabled).toString()
                     }
                     call.respondText(state, ContentType.Application.Json)
@@ -54,6 +55,11 @@ class PlayerService : Service() {
                 post("/recent-url-delete") {
                     val url = call.receiveParameters().getAll("url")!!.single()
                     withContext(Dispatchers.Main) { shared.removeRecentUrl(url) }
+                    call.respondText("OK")
+                }
+                post("/favourite-delete") {
+                    val uri = call.receiveParameters().getAll("uri")!!.single()
+                    withContext(Dispatchers.Main) { shared.removeFavourite(uri) }
                     call.respondText("OK")
                 }
                 post("/recent-url-name") {
@@ -104,7 +110,7 @@ class PlayerService : Service() {
                         val fields = call.receiveParameters()
                         val url = fields.getAll("url")!!.single()
                         withContext(Dispatchers.Main) {
-                            players.getValue(call.parameters["playerId"]!!).loadSource(url, fields.getAll("requestId")!!.single())
+                            players.getValue(call.parameters["playerId"]!!).loadSource(url, fields.getAll("requestId")!!.single(), fields["favouriteUri"])
                         }
                         call.respondText("OK")
                     }
@@ -112,6 +118,10 @@ class PlayerService : Service() {
                         val fields = call.receiveParameters()
                         val sorting = PlaylistSort.valueOf(fields.getAll("sorting")!!.single())
                         withContext(Dispatchers.Main) { players.getValue(call.parameters["playerId"]!!).sort(sorting) }
+                        call.respondText("OK")
+                    }
+                    post("/favourite") {
+                        withContext(Dispatchers.Main) { players.getValue(call.parameters["playerId"]!!).favourite() }
                         call.respondText("OK")
                     }
                     post("/next") {

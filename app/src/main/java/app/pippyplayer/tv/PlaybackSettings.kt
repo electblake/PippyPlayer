@@ -96,6 +96,36 @@ class PlaybackSettings(private val context: Context) {
         shared.edit { putString("recentUrls", JSONArray(urls).toString()) }
     }
 
+    val favourites: List<PlaylistEntry>
+        get() {
+            val entries = JSONArray(shared.getString("favourites", "[]")!!)
+            return List(entries.length()) {
+                val entry = entries.getJSONObject(it)
+                PlaylistEntry(entry.getString("uri"),
+                    if (entry.isNull("title")) null else entry.getString("title"),
+                    if (entry.isNull("durationSeconds")) null else entry.getDouble("durationSeconds"),
+                    if (entry.isNull("mimeType")) null else entry.getString("mimeType"))
+            }
+        }
+
+    fun addFavourite(entry: PlaylistEntry) {
+        saveFavourites(listOf(entry) + favourites.filterNot { it.uri == entry.uri })
+    }
+
+    fun removeFavourite(uri: String) {
+        saveFavourites(favourites.filterNot { it.uri == uri })
+    }
+
+    private fun saveFavourites(entries: List<PlaylistEntry>) {
+        shared.edit { putString("favourites", favouritesJson(entries).toString()) }
+    }
+
+    fun favouritesJson(entries: List<PlaylistEntry> = favourites) = JSONArray(entries.map {
+        JSONObject().put("uri", it.uri).put("title", it.title ?: JSONObject.NULL)
+            .put("durationSeconds", it.durationSeconds ?: JSONObject.NULL)
+            .put("mimeType", it.mimeType ?: JSONObject.NULL)
+    })
+
     fun player(id: String): PlayerSettings {
         playerIds.single { it == id }
         return PlayerSettings(context, id)

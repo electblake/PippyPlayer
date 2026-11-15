@@ -5,8 +5,8 @@ const path=require('node:path');
 test.use({channel:'msedge',viewport:{width:390,height:844}});
 
 let responseRevision=0;
-const stateResponse=state=>({...state,revision:++responseRevision});
-const player=id=>({sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',offsetX:0,offsetY:0,cropTop:0,cropRight:0,cropBottom:0,cropLeft:0,sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
+const stateResponse=state=>({favourites:[],...state,revision:++responseRevision});
+const player=id=>({favourite:false,sourceRevision:0,sourceRequestId:'',sourceLoading:false,id,name:'Player '+id,url:'',size:30,zoom:1,volume:50,position:'BOTTOM_RIGHT',offsetX:0,offsetY:0,cropTop:0,cropRight:0,cropBottom:0,cropLeft:0,sorting:'DEFAULT',repeatOne:false,queueLength:0,queueIndex:0,visible:false,seekable:false,hasPrevious:false,hasNext:false,error:null,loading:false,playbackState:'Stopped',debugText:''});
 
 test('source error survives polling, layout changes, tab switches and reload until the next source attempt',async({page})=>{
     const state={players:[player('1'),player('2')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
@@ -514,4 +514,47 @@ test('slow diagnostic requests never overlap and hiding ignores their late respo
     await expect(page.locator('#diagnosticPanel')).toBeHidden();
     await expect(page.locator('#copyLogs')).toBeDisabled();
     await expect(page.locator('#diagnosticLogs')).toHaveValue('');
+});
+
+test('favourites are shared, searchable, playable and removable across players',async({page})=>{
+    const entry={uri:'http://media.test/current.mp4',title:'Current video',durationSeconds:12,mimeType:'video/mp4'};
+    const state={players:[{...player('1'),queueLength:2},player('2')],recentUrls:['http://media.test/list.m3u'],recentUrlNames:{},favourites:[],debugEnabled:false};
+    const sources=[];
+    await page.route('http://pippy.test/**',async route=>{
+        const req=route.request(),url=new URL(req.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
+        if(url.pathname==='/session/players/1/favourite'){state.favourites=[entry];state.players[0].favourite=true;}
+        if(url.pathname==='/session/players/2/source'){
+            sources.push(Object.fromEntries(new URLSearchParams(req.postData())));
+            state.players[1].queueLength=1;state.players[1].favourite=true;
+        }
+        if(url.pathname==='/session/favourite-delete'){expect(new URLSearchParams(req.postData()).get('uri')).toBe(entry.uri);state.favourites=[];state.players.forEach(p=>p.favourite=false);}
+        return route.fulfill({body:'OK'});
+    });
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('button',{name:'Add current video to favourites',exact:true}).click();
+    await expect(page.locator('#player-panel-1 [data-action="favourite"]')).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('#player-1-recentCount')).toHaveText('(1)');
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await expect(page.locator('#player-panel-2 [data-action="favourite"]')).toBeDisabled();
+    await page.locator('#player-2-favouriteSources summary').click();
+    await expect(page.locator('#player-2-favouriteUrls .recent-select')).toHaveText('Current video');
+    await page.locator('#player-2-favouriteSearch').fill('absent');
+    await expect(page.locator('#player-2-favouriteEmpty')).toHaveText('No matching favourites.');
+    await page.locator('#player-2-favouriteSearch').fill('current');
+    await page.locator('#player-2-favouriteUrls .recent-select').click();
+    await expect.poll(()=>sources.length).toBe(1);
+    expect(sources[0]).toMatchObject({url:'favourites:',favouriteUri:entry.uri});
+    await page.locator('#player-2-favouriteSources summary').click();
+    await page.getByRole('button',{name:'Play favourites',exact:true}).click();
+    await expect.poll(()=>sources.length).toBe(2);
+    expect(sources[1].favouriteUri).toBeUndefined();
+    await page.locator('#player-2-favouriteSources summary').click();
+    await page.getByRole('button',{name:'Remove Current video from favourites',exact:true}).click();
+    await expect(page.locator('#player-2-favouriteSearch')).toBeFocused();
+    await expect(page.locator('#player-2-playFavourites')).toBeDisabled();
+    await page.getByRole('tab',{name:'Player 1',exact:true}).click();
+    await expect(page.locator('#player-1-favouriteCount')).toHaveText('(0)');
+    await expect(page.locator('#player-panel-1 [data-action="favourite"]')).toBeEnabled();
 });

@@ -17,3 +17,9 @@ Bare paths with illustrative IDs such as `tags/123/scenes` and `/performers/456/
 ## Sorting
 
 Sorting applies immediately and is remembered. Choose Default, Length (Shortest), Length (Longest), Name, or Random. Random shuffles the playlist each time it is applied or a new playlist is loaded. Changing sorting keeps the current video playing; Default restores the original server order.
+
+## Favourites
+
+Use the star beside a player's playback controls to save its current video. Favourites are stored on the TV and shared across all players and remotes, including after app restarts and upgrades. Saving the same video again does not create a duplicate.
+
+Expand **Favourites** below **Recent URLs** to search by title or URL. Choose **Play favourites** to load the playlist, or select a video to start the playlist from that entry. Sorting, previous/next, and repeat work as for other playlists. Use an entry's delete icon to remove it from the shared saved list. Already loaded queues keep their contents until you select the playlist again; deleting a favourite does not interrupt playback.

@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-15
+
 ### Added
+
+- Added per-player stars to save the current video to a persistent Favourites playlist shared across players and remotes.
+- Added a searchable, collapsible Favourites list below Recent URLs, with playlist playback, selection of a starting video, and individual delete buttons.
+- Preserved favourite titles, durations, and media types for normal playlist sorting and playback.
 
 - Added README screenshots of the Android app before and after starting the player server and the web remote.
 - Added repository agent instructions and a release-regression verification skill.

@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicLong
 internal class PlayerRuntime(context: android.content.Context, val id: String, private val shared: PlaybackSettings,
     private val playbackResources: PlaybackResources,
     val sourceRequest: SourceRequest = SourceRequest { url, server ->
-        PlaylistCache(context).load(url, server, shared.playlistCacheHours)
+        if (url == "favourites:") shared.favourites
+        else PlaylistCache(context).load(url, server, shared.playlistCacheHours)
     }) : android.content.ContextWrapper(context) {
     val settings = shared.player(id)
     private var playWhenLoaded = true
@@ -212,6 +213,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         JSONObject().put("id", id).put("name", settings.name).put("url", settings.lastPlayedUrl).put("size", size)
             .put("zoom", zoom).put("volume", volume)
             .put("queueLength", queue.count)
+            .put("favourite", queue.count > 0 && shared.favourites.any { it.uri == queue.current.uri })
             .put("preparedItems", player.mediaItemCount)
             .put("sampleBytes", playbackResources.loadControl.allocatedBytes)
             .put("queueIndex", queue.index)
@@ -234,15 +236,18 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             .put("debugText", debugText)
             .put("elapsed", player.currentPosition)
 
-    suspend fun loadSource(url: String, requestId: String) {
+    fun favourite() { shared.addFavourite(queue.current) }
+
+    suspend fun loadSource(url: String, requestId: String, favouriteUri: String? = null) {
         DiagnosticLog.write(this, "player=$id SOURCE begin request=$requestId")
         playWhenLoaded = true
         showWhenLoaded = true
         sourceRequest.load(url, shared.upnpServer, requestId) { entries ->
             queue.load(entries)
+            if (favouriteUri != null) queue.select(queue.entries.indexOfFirst { it.uri == favouriteUri })
             loadQueue()
             settings.lastPlayedUrl = url
-            shared.recordPlayedUrl(url)
+            if (url != "favourites:") shared.recordPlayedUrl(url)
             DiagnosticLog.write(this, "player=$id SOURCE loaded count=${queue.count}")
         }
     }
