@@ -8,11 +8,12 @@ Portrait, landscape, square and ultrawide videos retain their aspect ratio. Wind
 
 ## Buffering and rendition selection
 
-- Forward buffering targets 10–20 seconds, with a 16 MiB compressed-sample allocation target and no retained back buffer. Startup waits for 1.5 seconds; rebuffering defaults to 3 seconds. Media3 also considers byte limits and end of source when deciding readiness. These are targets, not guarantees or total process-memory limits.
-- Up to 3 seconds of the next playlist item is preloaded only when current playback is not loading. Preloading additionally stops when combined sample allocations reach 20 MiB; a read already in progress can exceed that threshold. Current playback always retains loading priority.
+- Forward buffering targets 10–20 seconds, within a shared 32 MiB compressed-sample budget and no retained back buffer. Each active player receives at most 16 MiB or an equal share of the combined budget, whichever is smaller. Startup waits for 1.5 seconds; rebuffering defaults to 3 seconds. Media3 also considers byte limits and end of source when deciding readiness. These are targets, not guarantees or total process-memory limits.
+- Up to 3 seconds of the next playlist item is preloaded only with one active player, after its current buffer is filled and within its sample budget. Multiple active players do not preload upcoming items. In-flight reads can overshoot allocation targets; these are not codec/GPU or total process-memory limits.
 - HLS/DASH track selection prefers video within 1280×720 and 30 fps. This selects existing tracks; it does not resize encoded video. A single higher-resolution source still requires decoding its original resolution.
 - DLNA ranks advertised HTTP video resources: largest known resolution within 1280×720 (either orientation), then smallest known resolution above that budget, then resources with unknown resolution in server order. It does not request transcoding. Frame rate is constrained for adaptive tracks, not inferred from DLNA resolution metadata.
-- Next/Previous seeks within the existing playlist. Sorting moves existing items while retaining the current occurrence, position and volume, including duplicate URLs. Automatic advancement is managed by Media3.
+- Only the previous, current and next items enter each ExoPlayer timeline, regardless of full playlist size. Next/Previous and automatic advancement update this window. Sorting retains the current occurrence, position and volume, including duplicate URLs.
+- Pause and hide stop decoding and release sample buffers while retaining queue and position. Resume prepares that position again; it can briefly buffer.
 
 A smaller PiP window alone does not reduce decode workload. Prebuffering absorbs delivery jitter; it cannot fix sustained insufficient bandwidth, unsupported codecs, decoder contention or corrupt frames. Test simultaneous playback on the target TV.
 
@@ -23,6 +24,10 @@ The overlay uses permission-based `TYPE_APPLICATION_OVERLAY` to support all nine
 Open **Setting** to set the **UPnP server URL** and **Resume buffer after a stall (milliseconds)**. Both are saved on Android. The existing saved cache value is now the rebuffer threshold. Stop and start the PippyPlayer service from the TV app to apply a changed threshold. Thresholds greater than 10/20 seconds also raise the respective forward-buffer time targets; the byte target remains unchanged.
 
 The last loaded source URL remains saved across Stop, remote reloads and app restarts. Stop clears playback but keeps the URL. Playback does not start automatically.
+
+## Shared playback resources
+
+One service-owned coordinator provides a shared playback looper, load control and sample allocator for all players. Decoders and surfaces remain independent because each video has independent playback controls. A shared HTTP factory uses Android's network connection pooling. Progressive HTTP media bytes use one 128 MiB LRU disk cache across players and service restarts. HLS, DASH and RTSP bypass this media cache so adaptive manifests remain fresh. Clear playlist cache does not clear video bytes or saved state.
 
 ## Playlist cache
 

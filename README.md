@@ -9,7 +9,7 @@ Watch video in a floating window on your Android TV or Google TV while using oth
 - M3U/M3U8 playlists and DLNA/UPnP video folders.
 - Android media URIs accessible to the TV.
 
-Video requires a hardware decoder for the source codec/profile. PiP prefers existing smaller renditions and preloads the next video without transcoding on the TV.
+Video requires a hardware decoder for the source codec/profile. PiP prefers existing smaller renditions and shares buffer/cache resources across players without transcoding on the TV.
 
 Webpages, DRM-protected services, authenticated providers, and video-file uploads are not supported. See [playback details](docs/playback.md) and [playlist usage](docs/playlists.md).
 
@@ -17,7 +17,7 @@ Webpages, DRM-protected services, authenticated providers, and video-file upload
 
 PippyPlayer uses [Android Media3 / ExoPlayer](https://developer.android.com/media/media3/exoplayer/supported-devices) and the TV's hardware video decoders. Compatibility depends on the operating system and hardware, not just the manufacturer. Android TV and Google TV models need **Android 10 / API 29 or newer** and permission to display over other apps.
 
-Playback performance varies by codec, resolution, and available decoder resources. Playing another video app alongside PippyPlayer can cause contention even when either video plays smoothly on its own. PippyPlayer prefers existing smaller renditions and preloads the next video without transcoding on the TV.
+Playback performance varies by codec, resolution, and available decoder resources. Playing another video app alongside PippyPlayer can cause contention even when either video plays smoothly on its own. PippyPlayer prefers existing smaller renditions and shares buffer/cache resources across players without transcoding on the TV.
 
 Manufacturers with compatible Android TV / Google TV product lines:
 

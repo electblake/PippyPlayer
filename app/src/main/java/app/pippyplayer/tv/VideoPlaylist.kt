@@ -33,6 +33,9 @@ class PlaybackQueue {
     private var ordered: List<IndexedValue<PlaylistEntry>> = emptyList()
     val entries get() = ordered.map { it.value }
     val itemIds get() = ordered.map { it.index.toString() }
+    internal fun entryAt(index: Int) = ordered[index].value
+    internal fun idAt(index: Int) = ordered[index].index.toString()
+    internal fun selectId(id: String) { index = ordered.indexOfFirst { it.index.toString() == id } }
     val count get() = ordered.size
     var sorting = PlaylistSort.DEFAULT
         private set

@@ -14,13 +14,11 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.TransferListener
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import android.view.View
 import android.view.WindowManager
 import org.json.JSONObject
@@ -33,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 @androidx.annotation.OptIn(UnstableApi::class)
 internal class PlayerRuntime(context: android.content.Context, val id: String, private val shared: PlaybackSettings,
+    private val playbackResources: PlaybackResources,
     val sourceRequest: SourceRequest = SourceRequest { url, server ->
         PlaylistCache(context).load(url, server, shared.playlistCacheHours)
     }) : android.content.ContextWrapper(context) {
@@ -62,6 +61,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     lateinit var loadingView: LinearLayout
     lateinit var loadingLabel: TextView
     var debugText = "No media loaded"
+    private var updatingQueueWindow = false
     var rebufferMs = 0
     val networkBytes = AtomicLong()
     var decoderName: String? = null
@@ -81,7 +81,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
                 MediaCodecSelector.DEFAULT.getDecoderInfos(mime, secure, tunneling)
                     .filter { !mime.startsWith("video/") || it.hardwareAccelerated }
             }
-        val dataSource = DefaultDataSource.Factory(this@PlayerRuntime).setTransferListener(object : TransferListener {
+        val mediaSources = playbackResources.mediaSourceFactory(object : TransferListener {
             override fun onTransferInitializing(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
             override fun onTransferStart(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
             override fun onTransferEnd(source: DataSource, dataSpec: DataSpec, isNetwork: Boolean) {}
@@ -89,9 +89,12 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
                 if (isNetwork) networkBytes.addAndGet(bytesTransferred.toLong())
             }
         })
+        playbackResources.loadControl.register(id, rebufferMs)
         player = ExoPlayer.Builder(this@PlayerRuntime, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
-            .setLoadControl(PipLoadControl(rebufferMs))
+            .setMediaSourceFactory(mediaSources)
+            .setLoadControl(playbackResources.loadControl)
+            .setPlaybackLooper(playbackResources.playbackLooper)
+            .setName(id)
             .build()
         player.preloadConfiguration = ExoPlayer.PreloadConfiguration(3_000_000L)
         player.setAudioAttributes(AudioAttributes.DEFAULT, false)
@@ -145,7 +148,10 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         player.addListener(PlayerVisibilityListener(window))
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                if (mediaItem != null) queue.select(queue.itemIds.indexOf(mediaItem.mediaId))
+                if (mediaItem != null && !updatingQueueWindow) {
+                    queue.selectId(mediaItem.mediaId)
+                    syncQueueWindow()
+                }
                 resetDebugInfo()
             }
             override fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -173,6 +179,8 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         JSONObject().put("id", id).put("name", settings.name).put("url", settings.lastPlayedUrl).put("size", size)
             .put("zoom", zoom).put("volume", volume)
             .put("queueLength", queue.count)
+            .put("preparedItems", player.mediaItemCount)
+            .put("sampleBytes", playbackResources.loadControl.allocatedBytes)
             .put("queueIndex", queue.index)
             .put("sorting", queue.sorting.name)
             .put("sourceRequestId", sourceRequest.requestId).put("sourceRevision", sourceRequest.revision).put("sourceLoading", sourceRequest.loading)
@@ -206,7 +214,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
 
     fun sort(sorting: PlaylistSort) {
         queue.sort(sorting)
-        player.applyQueueOrder(queue.itemIds)
+        syncQueueWindow()
         settings.sorting = sorting
     }
 
@@ -216,12 +224,14 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         if (queue.count == 0) return
         lastResume = playbackSnapshot()
         if (player.playbackState == Player.STATE_ENDED) player.seekToDefaultPosition()
+        if (player.playbackState == Player.STATE_IDLE) player.prepare()
         player.setWindowVisible(window, true)
     }
 
     fun pause() {
         playWhenLoaded = false
         player.pause()
+        player.stop() // Retains timeline and position while releasing codecs and sample buffers.
     }
 
     fun next() { if (queue.hasNext) { player.seekToNextMediaItem(); resume() } }
@@ -280,11 +290,26 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             window.visibility = View.GONE
             return
         }
-        player.setMediaItems(queue.mediaItems(), queue.index, 0L)
-        player.applyQueueOrder(queue.itemIds)
-        player.prepare()
+        updatingQueueWindow = true
+        player.setMediaItems(queue.windowItems(), queue.index - queue.windowStart, 0L)
+        updatingQueueWindow = false
+        if (playWhenLoaded) player.prepare()
         window.visibility = if (showWhenLoaded) View.VISIBLE else View.GONE
         player.playWhenReady = playWhenLoaded
+    }
+
+    private fun syncQueueWindow() {
+        if (queue.count == 0 || updatingQueueWindow) return
+        updatingQueueWindow = true
+        // Keep the current MediaSource/decoder and position; replace only its neighbours.
+        val current = player.currentMediaItemIndex
+        player.removeMediaItems(current + 1, player.mediaItemCount)
+        player.removeMediaItems(0, current)
+        val items = queue.windowItems()
+        val selected = queue.index - queue.windowStart
+        if (selected > 0) player.addMediaItems(0, items.subList(0, selected))
+        if (selected + 1 < items.size) player.addMediaItems(items.subList(selected + 1, items.size))
+        updatingQueueWindow = false
     }
 
     private fun setLayout(): Boolean {
@@ -374,7 +399,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             "FPS shown ${number(rates?.displayedFps)} / queued ${number(rates?.decodedFps)} / source ${number(sourceFps)}",
             "Network input (including preload): ${number(rates?.megabitsPerSecond)} Mbps · Dropped ${counters?.droppedBufferCount ?: "—"}",
             if (track == null) "Video format —" else "${track.width}×${track.height} · ${track.sampleMimeType}",
-            "Rebuffer threshold: $rebufferMs ms · Next-item preload: 3000 ms · Sample buffer target: 16 MiB",
+            "Rebuffer threshold: $rebufferMs ms · Next-item preload: single active player only · Shared sample budget: 32 MiB",
             "Before last Resume: $lastResume"
         ).joinToString("\n")
         debugView.text = debugText
@@ -383,6 +408,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     fun playbackState(): String = when {
         player.playerError != null -> "Error"
         player.playbackState == Player.STATE_ENDED -> "Ended"
+        player.playbackState == Player.STATE_IDLE && queue.count > 0 -> "Paused"
         player.playbackState == Player.STATE_IDLE -> "Stopped"
         !player.playWhenReady -> "Paused"
         player.playbackState == Player.STATE_BUFFERING -> "Buffering"
@@ -400,5 +426,6 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         player.stop()
         manager.removeView(window)
         player.release()
+        playbackResources.loadControl.unregister(id)
     }
 }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +24,10 @@ import org.robolectric.annotation.Config
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class PlayerRuntimeTest {
     private val context: Context get() = RuntimeEnvironment.getApplication()
+    private lateinit var resources: PlaybackResources
+    @After fun releaseResources() { resources.release() }
     @Before fun clearSettings() {
+        resources = PlaybackResources(context)
         listOf("playback", "player_1", "player_2").forEach {
             context.getSharedPreferences(it, Context.MODE_PRIVATE).edit().clear().commit()
         }
@@ -32,7 +36,7 @@ class PlayerRuntimeTest {
     @Test fun stopDuringSourceLoadingCannotRestartPlaybackWhenTheResultArrives() = runBlocking {
         val shared = PlaybackSettings(context)
         val gate = CompletableDeferred<List<PlaylistEntry>>()
-        val runtime = PlayerRuntime(context, "1", shared, SourceRequest { _, _ -> gate.await() })
+        val runtime = PlayerRuntime(context, "1", shared, resources, SourceRequest { _, _ -> gate.await() })
         val pending = async(start = CoroutineStart.UNDISPATCHED) { runtime.loadSource("old", "request") }
         runtime.stop()
         gate.complete(listOf(PlaylistEntry("http://media.test/video.mp4", null)))
@@ -50,8 +54,8 @@ class PlayerRuntimeTest {
         val shared = PlaybackSettings(context)
         val secondId = shared.addPlayer()
         val gate = CompletableDeferred<List<PlaylistEntry>>()
-        val first = PlayerRuntime(context, "1", shared, SourceRequest { _, _ -> gate.await() })
-        val second = PlayerRuntime(context, secondId, shared)
+        val first = PlayerRuntime(context, "1", shared, resources, SourceRequest { _, _ -> gate.await() })
+        val second = PlayerRuntime(context, secondId, shared, resources)
         second.configure(Position.TOP_LEFT, 45, 1.5f, 72)
         val pending = async(start = CoroutineStart.UNDISPATCHED) { first.loadSource("old", "request") }
         first.release()
@@ -68,8 +72,8 @@ class PlayerRuntimeTest {
 
     @Test fun partialConfigurationKeepsOtherFieldsAndOtherPlayersUnchanged() {
         val shared = PlaybackSettings(context)
-        val first = PlayerRuntime(context, "1", shared)
-        val second = PlayerRuntime(context, shared.addPlayer(), shared)
+        val first = PlayerRuntime(context, "1", shared, resources)
+        val second = PlayerRuntime(context, shared.addPlayer(), shared, resources)
         first.configure(Position.TOP_RIGHT, 50, 2f, 12)
         first.configure(null, null, null, 81)
         assertEquals(Position.TOP_RIGHT, first.position)
@@ -87,7 +91,7 @@ class PlayerRuntimeTest {
 
     @Test fun emptySourcesAndResumeWithoutMediaDoNotShowBlackWindows() = runBlocking {
         val shared = PlaybackSettings(context)
-        val runtime = PlayerRuntime(context, "1", shared, SourceRequest { _, _ -> emptyList() })
+        val runtime = PlayerRuntime(context, "1", shared, resources, SourceRequest { _, _ -> emptyList() })
         runtime.resume()
         assertEquals(View.GONE, runtime.window.visibility)
         runtime.loadSource("empty", "request")
@@ -100,7 +104,7 @@ class PlayerRuntimeTest {
 
     @Test fun screenOffsetsFollowPhysicalAxesAcrossPositionPresets() {
         val shared = PlaybackSettings(context)
-        val runtime = PlayerRuntime(context, "1", shared)
+        val runtime = PlayerRuntime(context, "1", shared, resources)
         val metrics = runtime.resources.displayMetrics
         val initialFlags = runtime.layout.flags
         assertEquals(0, runtime.layout.x)
@@ -126,7 +130,7 @@ class PlayerRuntimeTest {
     }
 
     @Test fun edgeCropKeepsTheFullVideoSurfaceAndScalesWithPlayerDimensions() {
-        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context))
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
         val width = runtime.layout.width
         val height = runtime.layout.height
         runtime.configure(Position.BOTTOM_RIGHT, null, 1.5f, null, cropTop = -10, cropRight = -15, cropBottom = -20, cropLeft = -25)
@@ -173,7 +177,7 @@ class PlayerRuntimeTest {
     }
 
     @Test fun uncroppedPlaybackKeepsTheSurfaceMatchedAndSkipsUnchangedWindowLayouts() {
-        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context))
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
         val actualManager = runtime.manager
         var windowUpdates = 0
         runtime.manager = object : WindowManager by actualManager {
@@ -205,7 +209,7 @@ class PlayerRuntimeTest {
     @Test fun pauseAndHideDuringALoadRemainInEffectWhenTheSourceCompletes() = runBlocking {
         val shared = PlaybackSettings(context)
         var gate = CompletableDeferred<List<PlaylistEntry>>()
-        val runtime = PlayerRuntime(context, "1", shared, SourceRequest { _, _ -> gate.await() })
+        val runtime = PlayerRuntime(context, "1", shared, resources, SourceRequest { _, _ -> gate.await() })
         val entries = listOf(PlaylistEntry("https://media.test/video.mp4", "Video"))
         val first = async(start = CoroutineStart.UNDISPATCHED) { runtime.loadSource("one", "one") }
         runtime.pause()
@@ -222,4 +226,34 @@ class PlayerRuntimeTest {
         assertEquals(View.GONE, runtime.window.visibility)
         runtime.release()
     }
+    @Test fun largeQueueKeepsOnlyNeighboursAndPreservesDuplicateIdentityAcrossSortAndPause() {
+        val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
+        runtime.queue.load(List(1778) { PlaylistEntry("https://media.test/same.mp4", "Item ${1778 - it}") })
+        runtime.loadQueue()
+        assertEquals(2, runtime.player.mediaItemCount)
+        repeat(30) { runtime.next(); assertEquals(3, runtime.player.mediaItemCount) }
+        assertEquals(30, runtime.queue.index)
+        assertEquals("30", runtime.player.currentMediaItem!!.mediaId)
+        runtime.player.seekTo(12_000L)
+        runtime.sort(PlaylistSort.NAME)
+        assertEquals("30", runtime.player.currentMediaItem!!.mediaId)
+        assertEquals(12_000L, runtime.player.currentPosition)
+        runtime.pause()
+        assertEquals(androidx.media3.common.Player.STATE_IDLE, runtime.player.playbackState)
+        assertEquals("Paused", runtime.playbackState())
+        assertEquals(12_000L, runtime.player.currentPosition)
+        runtime.resume()
+        assertTrue(runtime.player.playWhenReady)
+        assertEquals(12_000L, runtime.player.currentPosition)
+        runtime.toggleVisibility()
+        assertEquals(View.GONE, runtime.window.visibility)
+        assertEquals(androidx.media3.common.Player.STATE_IDLE, runtime.player.playbackState)
+        runtime.toggleVisibility()
+        assertTrue(runtime.player.playWhenReady)
+        runtime.sort(PlaylistSort.DEFAULT)
+        runtime.previous()
+        assertEquals(29, runtime.queue.index)
+        runtime.release()
+    }
+
 }

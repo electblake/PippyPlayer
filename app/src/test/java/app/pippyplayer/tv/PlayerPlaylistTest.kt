@@ -213,6 +213,7 @@ class PlayerPlaylistTest {
     @Test fun customLoadControlForwardsLifecycleAndBufferDecisions() {
         val control = PipLoadControl(3000)
         val id = androidx.media3.exoplayer.analytics.PlayerId.UNSET
+        control.register(id.name, 3000)
         val timeline = androidx.media3.exoplayer.source.SinglePeriodTimeline(
             60_000_000L, true, false, false, null,
             androidx.media3.common.MediaItem.fromUri("https://media.test/video.mp4"))

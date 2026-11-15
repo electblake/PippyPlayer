@@ -2,6 +2,8 @@
 
 Kotlin/Compose TV launcher, foreground media playback service, Media3 ExoPlayer, one hardware-decoded SurfaceView overlay and ExoPlayer per player, Ktor CIO HTTP server, ZXing QR generator, and a bundled vanilla HTML/CSS/JS controller. No application recovery, retry, fallback provider, or compatibility layer is implemented.
 
+The service owns `PlaybackResources`: one playback thread, shared `PipLoadControl`/allocator, HTTP factory and media-byte cache. Runtimes release their ExoPlayers before the service closes these resources. Player snapshots include `preparedItems` (at most three) and `sampleBytes` (the shared allocation total).
+
 All routes are below `/<session-token>`:
 
 | Method | Route | Purpose |

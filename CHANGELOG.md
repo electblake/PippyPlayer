@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-14
+
+### Added
+
+- Added a service-owned playback resource coordinator with one playback thread, shared sample allocation, and a 32 MiB combined sample-buffer target divided among active players.
+- Added a shared 128 MiB disk cache for progressive HTTP media. Adaptive streams continue fetching manifests and segments directly.
+
+### Changed
+
+- Disabled next-item preloading while multiple players are active; a single active player preloads only after its current buffer is filled.
+- Limited each ExoPlayer timeline to the previous, current, and next playlist items while retaining the full queue for sorting and navigation.
+- Updated buffer-setting help to describe shared allocation and preload scheduling.
+
+### Fixed
+
+- Released decoder and sample-buffer resources when pausing or hiding a player, retaining its queue and playback position for resume.
+- Preserved current-item identity and playback position when sorting large playlists containing duplicate URLs.
+
 ## [0.15.0] - 2026-11-14
 
 ### Added

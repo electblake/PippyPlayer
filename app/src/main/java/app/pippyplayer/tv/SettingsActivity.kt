@@ -108,7 +108,7 @@ class SettingsActivity : Activity() {
         }
         cacheLabel.labelFor = cache.id
         content.addView(cache)
-        label("Wait for this much buffered video after a delivery stall. Restart PippyPlayer's service to apply changes. Forward buffering targets 10–20 seconds within a 16 MiB sample budget; the next video preloads up to 3 seconds.", 16f)
+        label("Wait for this much buffered video after a delivery stall. Restart PippyPlayer's service to apply changes. Players share a 32 MiB sample budget. Forward buffering targets 10–20 seconds within each active player’s share. Only a single active player preloads its next video, up to 3 seconds.", 16f)
         playerSelector.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 settings = shared.player(playerIds[position])

@@ -20,9 +20,10 @@ import java.util.UUID
 
 class PlayerService : Service() {
     private lateinit var shared: PlaybackSettings
+    private lateinit var playbackResources: PlaybackResources
     private var stateRevision = 0L
     private val players = linkedMapOf<String, PlayerRuntime>()
-    private fun addPlayer(id: String): PlayerRuntime = PlayerRuntime(this, id, shared).also { players[id] = it }
+    private fun addPlayer(id: String): PlayerRuntime = PlayerRuntime(this, id, shared, playbackResources).also { players[id] = it }
     private val server = embeddedServer(CIO, host = "0.0.0.0", port = 0) {
         routing {
             route("/${PlayerState.token}") {
@@ -149,6 +150,7 @@ class PlayerService : Service() {
     override fun onCreate() {
         super.onCreate()
         shared = PlaybackSettings(this)
+        playbackResources = PlaybackResources(this)
         PlayerState.token = UUID.randomUUID().toString()
         PlayerState.debugEnabled = shared.debugEnabled
         val notifications = getSystemService(NotificationManager::class.java)
@@ -179,6 +181,7 @@ class PlayerService : Service() {
         server.stop(0, 0)
         players.values.forEach { it.release() }
         players.clear()
+        playbackResources.release()
         PlayerState.running = false
         super.onDestroy()
     }
