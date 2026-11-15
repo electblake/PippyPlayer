@@ -1,0 +1,211 @@
+{
+  "queryType": {
+    "name": "Query",
+    "fields": [
+      {
+        "name": "findSavedFilter",
+        "args": [
+          {
+            "name": "id",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "type": {
+          "kind": "OBJECT",
+          "name": "SavedFilter",
+          "ofType": null
+        }
+      },
+      {
+        "name": "findSavedFilters",
+        "args": [
+          {
+            "name": "mode",
+            "type": {
+              "kind": "ENUM",
+              "name": "FilterMode",
+              "ofType": null
+            }
+          }
+        ],
+        "type": {
+          "kind": "NON_NULL",
+          "name": null,
+          "ofType": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "SavedFilter"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "types": [
+    {
+      "kind": "OBJECT",
+      "name": "SavedFilter",
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "ID",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "mode",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "FilterMode",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "find_filter",
+          "type": {
+            "kind": "OBJECT",
+            "name": "SavedFindFilterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "object_filter",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Map",
+            "ofType": null
+          }
+        },
+        {
+          "name": "ui_options",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Map",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "OBJECT",
+      "name": "SavedFindFilterType",
+      "fields": [
+        {
+          "name": "q",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "page",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "per_page",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sort",
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "direction",
+          "type": {
+            "kind": "ENUM",
+            "name": "SortDirectionEnum",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": [],
+      "enumValues": []
+    },
+    {
+      "kind": "ENUM",
+      "name": "FilterMode",
+      "fields": [],
+      "inputFields": [],
+      "enumValues": [
+        {
+          "name": "SCENES"
+        },
+        {
+          "name": "PERFORMERS"
+        },
+        {
+          "name": "STUDIOS"
+        },
+        {
+          "name": "GALLERIES"
+        },
+        {
+          "name": "SCENE_MARKERS"
+        },
+        {
+          "name": "MOVIES"
+        },
+        {
+          "name": "GROUPS"
+        },
+        {
+          "name": "TAGS"
+        },
+        {
+          "name": "IMAGES"
+        }
+      ]
+    }
+  ]
+}

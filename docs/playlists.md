@@ -12,7 +12,7 @@ Supported page paths are `/scenes/{id}` and `/{collection}/{id}` with an optiona
 
 The last loaded source is retained on Android and restored in the remote after reloads, Stop, and app restarts. Press Play to load it again.
 
-Bare paths such as `tags/17279/scenes` and `/performers/5575/scenes` can also be entered directly in Video URL. Only the path identifies the DLNA collection.
+Bare paths with illustrative IDs such as `tags/123/scenes` and `/performers/456/scenes` can also be entered directly in Video URL. Only the path identifies the DLNA collection.
 
 ## Sorting
 

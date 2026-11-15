@@ -5,7 +5,7 @@
 ## DLNA and Stash server references
 
 - Before working with DLNA or Stash, read the [media server reference index](docs/media-server-reference.md) and the relevant server reference: [DLNA / UPnP](docs/dlna-server.md) or [Stash GraphQL](docs/stash-graphql-server.md).
-- Use these references for known endpoints, sample IDs, dated observations, and read-only interrogation examples. For GraphQL, also consult the [sample scene query](docs/stash-scenes.graphql) and [selected schema snapshot](docs/stash-graphql-schema-2026-11-15.json). Treat historical observations as dated evidence, not guaranteed current server behavior.
+- Use these references for schema metadata and generic read-only interrogation examples. Never save private server query results, library records, saved-filter definitions, installation addresses, or credentials in docs or fixtures; schemas are allowed. Write documentation for general audiences. For GraphQL, also consult the [sample scene query](docs/stash-scenes.graphql) and [selected schema snapshot](docs/stash-graphql-schema-2026-11-15.json). Treat historical observations as dated evidence, not guaranteed current server behavior.
 
 ## GitHub releases
 
