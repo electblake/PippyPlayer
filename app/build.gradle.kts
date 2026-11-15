@@ -13,8 +13,8 @@ android {
         // Keep the tested sideload target; API 37 requires a separate LAN permission flow.
         //noinspection OldTargetApi
         targetSdk = 36
-        versionCode = 28
-        versionName = "0.19.0"
+        versionCode = 29
+        versionName = "0.19.1"
     }
     buildFeatures { compose = true }
     testOptions { unitTests.isIncludeAndroidResources = true }

@@ -524,7 +524,7 @@ test('favourites are shared, searchable, playable and removable across players',
         const req=route.request(),url=new URL(req.url());
         if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
         if(url.pathname==='/session/state')return route.fulfill({json:stateResponse(state)});
-        if(url.pathname==='/session/players/1/favourite'){state.favourites=[entry];state.players[0].favourite=true;}
+        if(url.pathname==='/session/players/1/favourite'){state.players[0].favourite=!state.players[0].favourite;state.favourites=state.players[0].favourite?[entry]:[];}
         if(url.pathname==='/session/players/2/source'){
             sources.push(Object.fromEntries(new URLSearchParams(req.postData())));
             state.players[1].queueLength=1;state.players[1].favourite=true;
@@ -536,6 +536,12 @@ test('favourites are shared, searchable, playable and removable across players',
     await page.getByRole('button',{name:'Add current video to favourites',exact:true}).click();
     await expect(page.locator('#player-panel-1 [data-action="favourite"]')).toHaveAttribute('aria-pressed','true');
     await expect(page.locator('#player-1-recentCount')).toHaveText('(1)');
+    await page.getByRole('button',{name:'Remove current video from favourites',exact:true}).click();
+    await expect(page.locator('#player-panel-1 [data-action="favourite"]')).toHaveAttribute('aria-pressed','false');
+    await expect(page.locator('#player-1-favouriteCount')).toHaveText('(0)');
+    await expect(page.locator('#player-1-favouriteSources')).not.toHaveAttribute('open','');
+    await page.getByRole('button',{name:'Add current video to favourites',exact:true}).click();
+    await expect(page.locator('#player-1-favouriteCount')).toHaveText('(1)');
     await page.getByRole('tab',{name:'Player 2',exact:true}).click();
     await expect(page.locator('#player-panel-2 [data-action="favourite"]')).toBeDisabled();
     await page.locator('#player-2-favouriteSources summary').click();

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-11-15
+
+### Changed
+
+- Changed the player star to toggle the current video in and out of Favourites without opening the list.
+
 ## [0.19.0] - 2026-11-15
 
 ### Added

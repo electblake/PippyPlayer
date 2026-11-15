@@ -236,7 +236,11 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             .put("debugText", debugText)
             .put("elapsed", player.currentPosition)
 
-    fun favourite() { shared.addFavourite(queue.current) }
+    fun favourite() {
+        val entry = queue.current
+        if (shared.favourites.any { it.uri == entry.uri }) shared.removeFavourite(entry.uri)
+        else shared.addFavourite(entry)
+    }
 
     suspend fun loadSource(url: String, requestId: String, favouriteUri: String? = null) {
         DiagnosticLog.write(this, "player=$id SOURCE begin request=$requestId")

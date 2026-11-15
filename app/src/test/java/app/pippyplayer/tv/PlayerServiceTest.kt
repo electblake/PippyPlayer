@@ -61,6 +61,8 @@ class PlayerServiceTest {
             PlaybackSettings(context).addFavourite(favourite)
             request("/players/1/source", "POST", "url=favourites%3A&requestId=favourites-test")
             request("/players/1/favourite", "POST")
+            assertEquals(0, JSONObject(request("/state")).getJSONArray("favourites").length())
+            request("/players/1/favourite", "POST")
             val favouritesState = JSONObject(request("/state"))
             assertEquals(1, favouritesState.getJSONArray("favourites").length())
             assertTrue(favouritesState.getJSONArray("players").getJSONObject(0).getBoolean("favourite"))
