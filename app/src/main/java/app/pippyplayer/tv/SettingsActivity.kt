@@ -13,6 +13,8 @@ import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.AdapterView
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -124,6 +126,13 @@ class SettingsActivity : Activity() {
                 finish()
             }
         })
+        label("Device info", 20f)
+        val deviceInfo = label("Reading device information…", 14f).apply { setTextIsSelectable(true) }
+        scope.launch {
+            val report = withContext(Dispatchers.IO) { DeviceInfo.report(this@SettingsActivity) }
+            deviceInfo.text = report
+            DiagnosticLog.write(this@SettingsActivity, "DEVICE_INFO\n$report")
+        }
         setContentView(ScrollView(this).apply { addView(content) })
         server.requestFocus()
     }

@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
 class PlayerRuntimeTest {
     @Test fun navigationAndUnchangedSortingRetainNeighbourMediaSources() {
         val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
-        runtime.queue.load(List(5) { PlaylistEntry("https://media.test/$it.mp4", "$it") })
+        runtime.queue.load(List(5) { PlaylistEntry("http://127.0.0.1:1/$it.mp4", "$it") })
         runtime.loadQueue()
         fun identities() = (0 until runtime.player.mediaItemCount).associate {
             runtime.player.getMediaItemAt(it).mediaId to runtime.player.currentTimeline.getUidOfPeriod(it)
@@ -39,6 +39,14 @@ class PlayerRuntimeTest {
         assertEquals(initial.getValue("1"), next.getValue("1"))
         runtime.previous()
         assertEquals(initial, identities())
+        runtime.recordPlaybackProgress()
+        val logs = DiagnosticLog.tail(context)
+        assertTrue(logs.contains("TRANSITION reason="))
+        assertTrue(logs.contains("QUEUE_WINDOW begin"))
+        assertTrue(logs.contains("QUEUE_WINDOW done"))
+        assertTrue(logs.contains("PROGRESS state="))
+        assertTrue(logs.contains("sharedSampleBytes="))
+        assertTrue(logs.contains("renderedDelta="))
         runtime.release()
     }
 
@@ -229,7 +237,7 @@ class PlayerRuntimeTest {
         val shared = PlaybackSettings(context)
         var gate = CompletableDeferred<List<PlaylistEntry>>()
         val runtime = PlayerRuntime(context, "1", shared, resources, SourceRequest { _, _ -> gate.await() })
-        val entries = listOf(PlaylistEntry("https://media.test/video.mp4", "Video"))
+        val entries = listOf(PlaylistEntry("http://127.0.0.1:1/video.mp4", "Video"))
         val first = async(start = CoroutineStart.UNDISPATCHED) { runtime.loadSource("one", "one") }
         runtime.pause()
         gate.complete(entries)
@@ -247,7 +255,7 @@ class PlayerRuntimeTest {
     }
     @Test fun largeQueueKeepsOnlyNeighboursAndPreservesDuplicateIdentityAcrossSortAndPause() {
         val runtime = PlayerRuntime(context, "1", PlaybackSettings(context), resources)
-        runtime.queue.load(List(1778) { PlaylistEntry("https://media.test/same.mp4", "Item ${1778 - it}") })
+        runtime.queue.load(List(1778) { PlaylistEntry("http://127.0.0.1:1/same.mp4", "Item ${1778 - it}") })
         runtime.loadQueue()
         assertEquals(2, runtime.player.mediaItemCount)
         repeat(30) { runtime.next(); assertEquals(3, runtime.player.mediaItemCount) }

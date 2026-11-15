@@ -66,6 +66,15 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     val networkBytes = AtomicLong()
     var decoderName: String? = null
     var lastResume = "No resume requested"
+    private var previousProgress: PlaybackSample? = null
+    private var previousProgressPosition: Long? = null
+    private val progressTick = object : Runnable {
+        override fun run() {
+            recordPlaybackProgress()
+            if (player.playWhenReady && player.playbackState != Player.STATE_ENDED &&
+                player.playbackState != Player.STATE_IDLE) main.postDelayed(this, 5000)
+        }
+    }
     val debugTick = object : Runnable {
         override fun run() {
             updateDebugInfo()
@@ -149,11 +158,25 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 DiagnosticLog.write(this@PlayerRuntime, "player=$id STATE $playbackState playing=${player.isPlaying} item=${queue.index}")
+                scheduleProgress()
+            }
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id PLAY_WHEN_READY value=$playWhenReady reason=$reason")
+                scheduleProgress()
+            }
+            override fun onIsLoadingChanged(isLoading: Boolean) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id LOADING value=$isLoading bufferedMs=${player.totalBufferedDuration} sharedSampleBytes=${playbackResources.loadControl.allocatedBytes}")
+            }
+            override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id DISCONTINUITY reason=$reason from=${oldPosition.mediaItem?.mediaId}@${oldPosition.positionMs} to=${newPosition.mediaItem?.mediaId}@${newPosition.positionMs}")
             }
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                 DiagnosticLog.write(this@PlayerRuntime, "player=$id ERROR ${error.stackTraceToString()}")
             }
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id TRANSITION reason=$reason mediaId=${mediaItem?.mediaId} queueIndex=${queue.index} updatingWindow=$updatingQueueWindow")
+                previousProgress = null
+                previousProgressPosition = null
                 if (mediaItem != null && !updatingQueueWindow) {
                     queue.selectId(mediaItem.mediaId)
                     syncQueueWindow()
@@ -171,11 +194,13 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, name: String,
                 initializedTimestampMs: Long, initializationDurationMs: Long) {
                 decoderName = name
+                previousProgress = null
                 DiagnosticLog.write(this@PlayerRuntime, "player=$id DECODER $name initMs=$initializationDurationMs")
                 previousSample = null
             }
             override fun onVideoDecoderReleased(eventTime: AnalyticsListener.EventTime, name: String) {
                 decoderName = null
+                previousProgress = null
                 DiagnosticLog.write(this@PlayerRuntime, "player=$id DECODER RELEASE $name")
                 previousSample = null
             }
@@ -314,6 +339,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
 
     private fun syncQueueWindow() {
         if (queue.count == 0 || updatingQueueWindow) return
+        DiagnosticLog.write(this, "player=$id QUEUE_WINDOW begin index=${queue.index} current=${player.currentMediaItem?.mediaId}")
         updatingQueueWindow = true
         val items = queue.windowItems()
         // Retain matching MediaSources, including the next item's preloaded samples.
@@ -329,6 +355,32 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             else if (existing != index) player.moveMediaItem(existing, index)
         }
         updatingQueueWindow = false
+        DiagnosticLog.write(this, "player=$id QUEUE_WINDOW done ids=${items.map { it.mediaId }} current=${player.currentMediaItem?.mediaId}")
+    }
+
+    private fun scheduleProgress() {
+        main.removeCallbacks(progressTick)
+        main.post(progressTick)
+    }
+
+    internal fun recordPlaybackProgress() {
+        val counters = player.videoDecoderCounters
+        counters?.ensureUpdated()
+        val previous = previousProgress
+        val position = player.currentPosition
+        val now = SystemClock.elapsedRealtime()
+        val bytes = networkBytes.get()
+        DiagnosticLog.write(this, "player=$id PROGRESS state=${playbackState()} playing=${player.isPlaying}" +
+            " playWhenReady=${player.playWhenReady} suppression=${player.playbackSuppressionReason}" +
+            " mediaId=${player.currentMediaItem?.mediaId} queueIndex=${queue.index}/${queue.count} prepared=${player.mediaItemCount}" +
+            " positionMs=$position positionDeltaMs=${previousProgressPosition?.let { position - it }}" +
+            " bufferedMs=${player.totalBufferedDuration} loading=${player.isLoading} sourceLoading=${sourceRequest.loading}" +
+            " rendered=${counters?.renderedOutputBufferCount} renderedDelta=${counters?.let { current -> previous?.let { current.renderedOutputBufferCount - it.displayed } }}" +
+            " queued=${counters?.queuedInputBufferCount} dropped=${counters?.droppedBufferCount}" +
+            " sampleIntervalMs=${previous?.let { now - it.timeMs }} networkBytes=$bytes networkDelta=${previous?.let { bytes - it.bytes }}" +
+            " sharedSampleBytes=${playbackResources.loadControl.allocatedBytes} decoder=$decoderName")
+        previousProgress = counters?.let { PlaybackSample(now, it.renderedOutputBufferCount, it.queuedInputBufferCount, bytes) }
+        previousProgressPosition = position
     }
 
     private fun setLayout(): Boolean {
@@ -444,10 +496,10 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     fun release() {
         DiagnosticLog.write(this, "player=$id RELEASE begin")
         sourceRequest.cancel()
-        main.removeCallbacksAndMessages(null)
         player.stop()
         manager.removeView(window)
         player.release()
+        main.removeCallbacksAndMessages(null)
         playbackResources.loadControl.unregister(id)
     }
 }

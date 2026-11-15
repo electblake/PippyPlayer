@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.os.Process
 import java.io.File
 import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.Instant
@@ -33,9 +34,35 @@ internal object DiagnosticLog {
         }
     }
 
+    fun recordDeviceInfo(context: Context) {
+        val application = context.applicationContext
+        writer.execute { write(application, "DEVICE_INFO\n${DeviceInfo.report(application)}") }
+    }
+
     // A requested report waits behind pending writes to preserve event order.
     fun read(context: Context): String = writer.submit<String> {
         context.filesDir.listFiles()!!.filter { it.name == CURRENT || it.name == PREVIOUS }
             .sortedBy { if (it.name == PREVIOUS) 0 else 1 }.joinToString("") { it.readText() }
+    }.get()
+
+    fun tail(context: Context): String = writer.submit<String> {
+        var remaining = 64 * 1024
+        val chunks = mutableListOf<String>()
+        for (name in listOf(CURRENT, PREVIOUS)) {
+            val file = File(context.filesDir, name)
+            if (remaining > 0 && file.exists()) {
+                RandomAccessFile(file, "r").use { input ->
+                    val count = minOf(input.length(), remaining.toLong()).toInt()
+                    val offset = input.length() - count
+                    input.seek(offset)
+                    val bytes = ByteArray(count)
+                    input.readFully(bytes)
+                    val text = bytes.toString(Charsets.UTF_8)
+                    chunks.add(if (offset == 0L) text else text.substringAfter('\n', ""))
+                    remaining -= count
+                }
+            }
+        }
+        chunks.asReversed().joinToString("").lineSequence().toList().takeLast(201).joinToString("\n")
     }.get()
 }

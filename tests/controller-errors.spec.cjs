@@ -456,3 +456,62 @@ test('all nine occupied positions disable adding players',async({page})=>{
     await expect(page.locator('#player-panel-1 [data-position]:disabled')).toHaveCount(8);
     await expect(page.locator('#player-panel-1 [data-position="TOP_LEFT"]')).toBeEnabled();
 });
+
+test('diagnostic logs tail only while shown, preserve scroll, and copy on the HTTP remote',async({page})=>{
+    const state={players:[player('1')],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    let reads=0;
+    let logs=Array.from({length:200},(_,i)=>`event ${i} <literal>`).join('\n');
+    await page.route('http://pippy.test/**',route=>{
+        const pathname=new URL(route.request().url()).pathname;
+        if(pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(pathname==='/session/diagnostics'){reads++;return route.fulfill({contentType:'text/plain',body:logs});}
+        return route.fulfill({json:stateResponse(state)});
+    });
+    await page.goto('http://pippy.test/session');
+    await expect(page.locator('#player-panel-1')).toBeVisible();
+    expect(reads).toBe(0);
+    await expect(page.getByRole('button',{name:'Copy logs'})).toBeDisabled();
+    await page.getByRole('button',{name:'Show logs'}).click();
+    const viewer=page.getByRole('textbox',{name:'Diagnostic logs',exact:true});
+    await expect(viewer).toHaveValue(logs);
+    expect(await viewer.evaluate(e=>e.scrollTop+e.clientHeight>=e.scrollHeight-2)).toBe(true);
+    await viewer.evaluate(e=>{e.scrollTop=0;});
+    logs+='\nnew live event';
+    await expect(viewer).toHaveValue(logs);
+    expect(await viewer.evaluate(e=>e.scrollTop)).toBe(0);
+    await page.getByRole('button',{name:'Copy logs'}).click();
+    await page.evaluate(()=>{const paste=document.createElement('textarea');paste.id='pasteCheck';document.body.append(paste);paste.focus();});
+    await page.keyboard.press('Control+V');
+    await expect(page.locator('#pasteCheck')).toHaveValue(logs);
+    await page.getByRole('button',{name:'Hide logs'}).click();
+    const stoppedAt=reads;
+    await page.waitForTimeout(3200);
+    expect(reads).toBe(stoppedAt);
+    await expect(viewer).toBeHidden();
+    await expect(page.getByRole('button',{name:'Copy logs'})).toBeDisabled();
+});
+
+test('slow diagnostic requests never overlap and hiding ignores their late response',async({page})=>{
+    const state={players:[],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    let reads=0,release;
+    await page.route('http://pippy.test/**',async route=>{
+        const pathname=new URL(route.request().url()).pathname;
+        if(pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(pathname==='/session/diagnostics'){
+            reads++;
+            await new Promise(resolve=>{release=resolve;});
+            return route.fulfill({contentType:'text/plain',body:'late event'});
+        }
+        return route.fulfill({json:stateResponse(state)});
+    });
+    await page.goto('http://pippy.test/session');
+    await page.getByRole('button',{name:'Show logs'}).click();
+    await expect.poll(()=>reads).toBe(1);
+    await page.waitForTimeout(3200);
+    expect(reads).toBe(1);
+    await page.getByRole('button',{name:'Hide logs'}).click();
+    release();
+    await expect(page.locator('#diagnosticPanel')).toBeHidden();
+    await expect(page.locator('#copyLogs')).toBeDisabled();
+    await expect(page.locator('#diagnosticLogs')).toHaveValue('');
+});

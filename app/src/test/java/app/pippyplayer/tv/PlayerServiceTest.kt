@@ -52,6 +52,8 @@ class PlayerServiceTest {
         }
         try {
             assertTrue(request("").contains("playerTemplate"))
+            DiagnosticLog.write(context, "REMOTE diagnostic test")
+            assertTrue(request("/diagnostics").contains("REMOTE diagnostic test"))
             val firstState = JSONObject(request("/state"))
             assertEquals(1, firstState.getJSONArray("players").length())
             val secondId = JSONObject(request("/players", "POST")).getString("id")

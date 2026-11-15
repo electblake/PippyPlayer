@@ -39,6 +39,11 @@ class PlayerService : Service() {
                     }
                     call.respondText(state, ContentType.Application.Json)
                 }
+                get("/diagnostics") {
+                    val logs = withContext(Dispatchers.IO) { DiagnosticLog.tail(this@PlayerService) }
+                    call.response.headers.append("Cache-Control", "no-store")
+                    call.respondText(logs, ContentType.Text.Plain)
+                }
                 post("/players") {
                     val state = withContext(Dispatchers.Main) {
                         val id = shared.addPlayer()
@@ -153,6 +158,7 @@ class PlayerService : Service() {
     override fun onCreate() {
         super.onCreate()
         DiagnosticLog.write(this, "SERVICE START")
+        DiagnosticLog.recordDeviceInfo(this)
         shared = PlaybackSettings(this)
         playbackResources = PlaybackResources(this)
         PlayerState.token = UUID.randomUUID().toString()

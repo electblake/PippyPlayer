@@ -15,6 +15,24 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class DiagnosticLogTest {
+    @Test fun remoteTailIncludesRotationAndBoundsLinesAndBytes() {
+        val context = RuntimeEnvironment.getApplication()
+        val previous = java.io.File(context.filesDir, "diagnostic-previous.txt")
+        val current = java.io.File(context.filesDir, "diagnostic-current.txt")
+        DiagnosticLog.read(context)
+        previous.writeText("previous event\n")
+        current.writeText("current event\n")
+        assertEquals("previous event\ncurrent event\n", DiagnosticLog.tail(context))
+        current.writeText((1..300).joinToString("") { "event $it\n" })
+        val tail = DiagnosticLog.tail(context)
+        assertTrue(tail.startsWith("event 101\n"))
+        assertTrue(tail.endsWith("event 300\n"))
+        current.writeText("x".repeat(100_000) + "\nlatest\n")
+        assertEquals("latest\n", DiagnosticLog.tail(context))
+        DiagnosticLog.write(context, "queued event")
+        assertTrue(DiagnosticLog.tail(context).contains("queued event"))
+    }
+
     @Test fun restartKeepsLastOperationVisibleOnTv() {
         val context = RuntimeEnvironment.getApplication()
         DiagnosticLog.write(context, "APP START old run")

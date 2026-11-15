@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-14
+
+### Added
+
+- Added Diagnostic logs below the web remote's debug option, with Show/Hide and Copy logs buttons.
+- Added live tailing of the latest 200 log lines, bounded to 64 KiB per response, with polling only while shown in a visible browser tab. Scrolling up preserves the reading position.
+- Added a session-scoped diagnostic endpoint that reads logs off the Android main thread without HTTP caching.
+- Added per-player transition, queue-update, loading, and five-second playback progress diagnostics, including position/frame/network deltas and shared buffer usage to investigate playlist freezes. Progress sampling runs independently of the debug overlay and remote log visibility.
+- Added Device info in Settings with CPU availability, hardware identity, RAM/heap figures, and Android-reported hardware video decoder concurrency limits. Device reports are also logged at service startup and when opening Settings, with the limits explained as upper bounds rather than guaranteed player counts.
+
 ## [0.17.1] - 2026-11-14
 
 ### Fixed
