@@ -78,7 +78,10 @@ class PlayerService : Service() {
                         val fields = call.receiveParameters()
                         withContext(Dispatchers.Main) {
                             players.getValue(call.parameters["playerId"]!!).configure(
-                                position = fields["position"]?.let(Position::valueOf),
+                                position = fields["position"]?.let { requested ->
+                                    val occupied = players.filterKeys { it != call.parameters["playerId"] }.values.map { it.position }
+                                    Position.entries.filter { it !in occupied }.single { it.name == requested }
+                                },
                                 size = fields["size"]?.toInt(), zoom = fields["zoom"]?.toFloat(),
                                 volume = fields["volume"]?.toInt(),
                                 offsetX = fields["offsetX"]?.toInt(), offsetY = fields["offsetY"]?.toInt(),
@@ -149,6 +152,7 @@ class PlayerService : Service() {
     }
     override fun onCreate() {
         super.onCreate()
+        DiagnosticLog.write(this, "SERVICE START")
         shared = PlaybackSettings(this)
         playbackResources = PlaybackResources(this)
         PlayerState.token = UUID.randomUUID().toString()
@@ -178,6 +182,7 @@ class PlayerService : Service() {
         players.values.forEach(PlayerRuntime::updateWindow)
     }
     override fun onDestroy() {
+        DiagnosticLog.write(this, "SERVICE STOP begin")
         server.stop(0, 0)
         players.values.forEach { it.release() }
         players.clear()

@@ -120,6 +120,7 @@ class MainActivity : ComponentActivity() {
         }
         action("App updates") { startActivity(Intent(this, UpdateActivity::class.java)) }
         action("Setting") { startActivity(Intent(this, SettingsActivity::class.java)) }
+        action("Diagnostic log") { startActivity(Intent(this, DiagnosticActivity::class.java)) }
         label(remote, "Remote control", 20f)
         instructions = label(remote, "")
         qr = ImageView(this).apply {

@@ -12,6 +12,7 @@ class PippyPlayerApplication : Application() {
         // The report viewer runs independently of the process that crashed.
         if (getProcessName() != packageName) return
         val version = packageManager.getPackageInfo(packageName, 0)
+        DiagnosticLog.write(this, "APP START version=${version.versionName} device=${Build.MANUFACTURER} ${Build.MODEL} API=${Build.VERSION.SDK_INT}")
         val platformHandler = Thread.getDefaultUncaughtExceptionHandler()!!
         Thread.setDefaultUncaughtExceptionHandler { thread, failure ->
             File(filesDir, CRASH_REPORT).writeText(buildString {

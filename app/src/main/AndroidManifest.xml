@@ -27,6 +27,7 @@
         </activity>
         <activity android:name=".CrashActivity" android:exported="false" android:process=":crash" />
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".DiagnosticActivity" android:exported="false" />
         <activity android:name=".UpdateActivity" android:exported="false" />
         <provider android:name=".UpdateFileProvider" android:authorities="${applicationId}.updates"
             android:exported="false" android:grantUriPermissions="true">

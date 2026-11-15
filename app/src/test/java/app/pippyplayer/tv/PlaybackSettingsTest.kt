@@ -62,6 +62,17 @@ class PlaybackSettingsTest {
         assertEquals("Shared name", shared.recentUrlNames.getString("https://first.test/video"))
     }
 
+    @Test fun newPlayersUseFreePositionsAndDeletedPositionsCanBeReused() {
+        val settings = shared
+        repeat(8) { settings.addPlayer() }
+        val positions = settings.playerIds.map { settings.player(it).position }
+        assertEquals(9, positions.toSet().size)
+        assertEquals(positions, PlaybackSettings(context).playerIds.map { PlaybackSettings(context).player(it).position })
+        val released = settings.player("2").position
+        settings.removePlayer("2")
+        assertEquals(released, settings.player(settings.addPlayer()).position)
+    }
+
     @Test fun upgradeMigratesExistingSinglePlayerSettingsWithoutReentry() {
         context.getSharedPreferences("playback", Context.MODE_PRIVATE).edit()
             .putString("upnpServer", "http://saved-server.test:9999")

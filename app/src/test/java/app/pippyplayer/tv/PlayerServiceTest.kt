@@ -27,7 +27,7 @@ class PlayerServiceTest {
         }
         val executor = Executors.newSingleThreadExecutor()
         var controller = Robolectric.buildService(PlayerService::class.java).create()
-        fun request(path: String, method: String = "GET", body: String = ""): String {
+        fun request(path: String, method: String = "GET", body: String = "", expectedCode: Int = 200): String {
             val base = "http://127.0.0.1:${PlayerState.controllerPort}/${PlayerState.token}"
             val future = executor.submit(Callable {
                 val connection = URI(base + path).toURL().openConnection() as HttpURLConnection
@@ -40,7 +40,7 @@ class PlayerServiceTest {
                 val code = connection.responseCode
                 val result = (if (code < 400) connection.inputStream else connection.errorStream).bufferedReader().use { it.readText() }
                 connection.disconnect()
-                assertEquals(result, 200, code)
+                assertEquals(result, expectedCode, code)
                 result
             })
             val deadline = System.nanoTime() + 10_000_000_000L
@@ -56,6 +56,10 @@ class PlayerServiceTest {
             assertEquals(1, firstState.getJSONArray("players").length())
             val secondId = JSONObject(request("/players", "POST")).getString("id")
             request("/players/1/config", "POST", "size=60&position=TOP_LEFT&volume=23")
+            request("/players/$secondId/config", "POST", "position=TOP_LEFT", expectedCode = 500)
+            val distinctPositions = JSONObject(request("/state")).getJSONArray("players")
+            assertEquals("TOP_LEFT", distinctPositions.getJSONObject(0).getString("position"))
+            assertNotEquals("TOP_LEFT", distinctPositions.getJSONObject(1).getString("position"))
             request("/players/$secondId/config", "POST", "volume=81")
             request("/players/$secondId/config", "POST", "offsetX=-14&offsetY=5")
             request("/players/$secondId/config", "POST", "offsetX=21")

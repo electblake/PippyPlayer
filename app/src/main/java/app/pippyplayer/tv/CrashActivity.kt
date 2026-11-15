@@ -41,6 +41,10 @@ class CrashActivity : Activity() {
         }
         actions.addView(copy)
         actions.addView(Button(this).apply {
+            text = "Diagnostic log"
+            setOnClickListener { startActivity(Intent(this@CrashActivity, DiagnosticActivity::class.java)) }
+        })
+        actions.addView(Button(this).apply {
             setText(R.string.updates_title)
             setOnClickListener {
                 startActivity(Intent(this@CrashActivity, UpdateActivity::class.java))

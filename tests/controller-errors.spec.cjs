@@ -412,3 +412,47 @@ test('recent URLs delete after the pencil, retain focus and stay deleted across 
     await expect(page.locator('#player-1-historyEmpty')).toBeVisible();
     await expect(page.locator('#player-1-recentCount')).toHaveText('(0)');
 });
+
+test('positions are reserved across players during writes and freed after moves and deletion',async({page})=>{
+    const state={players:[player('1'),{...player('2'),position:'TOP_LEFT'}],recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    let release;
+    await page.route('http://pippy.test/**',async route=>{
+        const req=route.request(),url=new URL(req.url());
+        if(url.pathname==='/session')return route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')});
+        if(url.pathname.endsWith('/config')){
+            await new Promise(resolve=>release=resolve);
+            state.players[0].position=new URLSearchParams(req.postData()).get('position');
+            return route.fulfill({body:'OK'});
+        }
+        if(req.method()==='DELETE'){state.players.splice(0,1);return route.fulfill({body:'OK'});}
+        return route.fulfill({json:stateResponse(state)});
+    });
+    await page.goto('http://pippy.test/session');
+    const first=page.locator('#player-panel-1'),second=page.locator('#player-panel-2');
+    await expect(first.locator('[data-position="TOP_LEFT"]')).toBeDisabled();
+    await expect(second.locator('[data-position="BOTTOM_RIGHT"]')).toBeDisabled();
+    await first.locator('[data-position="MIDDLE_CENTER"]').click();
+    await expect.poll(()=>typeof release).toBe('function');
+    await expect(first.locator('[data-position="TOP_RIGHT"]')).toBeDisabled();
+    await page.getByRole('tab',{name:'Player 2',exact:true}).click();
+    await expect(second.locator('[data-position="MIDDLE_CENTER"]')).toBeDisabled();
+    await expect(second.locator('[data-position="BOTTOM_RIGHT"]')).toBeDisabled();
+    release();
+    await expect(second.locator('[data-position="BOTTOM_RIGHT"]')).toBeEnabled();
+    await expect(second.locator('[data-position="MIDDLE_CENTER"]')).toBeDisabled();
+    await page.getByRole('tab',{name:'Player 1',exact:true}).click();
+    await first.getByRole('button',{name:'Delete Player 1',exact:true}).click();
+    await expect(second.locator('[data-position="MIDDLE_CENTER"]')).toBeEnabled();
+});
+
+test('all nine occupied positions disable adding players',async({page})=>{
+    const positions=['TOP_LEFT','TOP_CENTER','TOP_RIGHT','MIDDLE_LEFT','MIDDLE_CENTER','MIDDLE_RIGHT','BOTTOM_LEFT','BOTTOM_CENTER','BOTTOM_RIGHT'];
+    const state={players:positions.map((position,i)=>({...player(String(i+1)),position})),recentUrls:[],recentUrlNames:{},debugEnabled:false};
+    await page.route('http://pippy.test/**',route=>new URL(route.request().url()).pathname==='/session'
+        ?route.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(__dirname,'../app/src/main/assets/controller.html'),'utf8')})
+        :route.fulfill({json:stateResponse(state)}));
+    await page.goto('http://pippy.test/session');
+    await expect(page.getByRole('button',{name:'Add player',exact:true})).toBeDisabled();
+    await expect(page.locator('#player-panel-1 [data-position]:disabled')).toHaveCount(8);
+    await expect(page.locator('#player-panel-1 [data-position="TOP_LEFT"]')).toBeEnabled();
+});

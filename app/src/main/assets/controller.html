@@ -41,6 +41,13 @@ summary:focus-visible{outline:2px solid Highlight;outline-offset:2px}
 const base = location.pathname.replace(/\/$/, '');
 const pencilIcon='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5"/></svg>';
 const controllers=new Map();
+function updatePositionAvailability(){
+    for(const [id,controller] of controllers){
+        const occupied=new Set([...controllers].filter(([otherId])=>otherId!==id).flatMap(([,other])=>other.reservedPositions()));
+        controller.panel.querySelectorAll('[data-position]').forEach(button=>{button.disabled=controller.positionChanging()||occupied.has(button.dataset.position);});
+    }
+    document.querySelector('#addPlayer').disabled=new Set([...controllers.values()].flatMap(controller=>controller.reservedPositions())).size>=9;
+}
 let activePlayerId;
 let latestRevision=-1;
 async function sharedRequest(path,options){
@@ -120,6 +127,8 @@ const positions = ['TOP_LEFT','TOP_CENTER','TOP_RIGHT','MIDDLE_LEFT','MIDDLE_CEN
 const arrows = ['↖','↑','↗','←','•','→','↙','↓','↘'];
 const rangeFields = ['size','zoom','volume','offsetX','offsetY','cropTop','cropRight','cropBottom','cropLeft'];
 let position = 'BOTTOM_RIGHT';
+let confirmedPosition=initial.position;
+let positionChanging=false;
 let sourceLoading=false;
 let sourceRevision=initial.sourceRevision;
 let submittedRevision=initial.sourceRevision;
@@ -195,7 +204,7 @@ function updateRecentUrls(urls,names){
     renderRecentUrls();
 }
 function selectPosition(value) { position=value; panel.querySelectorAll('[data-control="positions"] button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.position===value))); }
-positions.forEach((value,i)=>{const b=document.createElement('button'); b.type='button';b.textContent=arrows[i];b.title=value.toLowerCase().replaceAll('_',' ');b.setAttribute('aria-label',b.title);b.dataset.position=value;b.onclick=async()=>{selectPosition(value);await apply('position',value);};panel.querySelector('[data-control="positions"]').append(b);});
+positions.forEach((value,i)=>{const b=document.createElement('button'); b.type='button';b.textContent=arrows[i];b.title=value.toLowerCase().replaceAll('_',' ');b.setAttribute('aria-label',b.title);b.dataset.position=value;b.onclick=async()=>{positionChanging=true;selectPosition(value);updatePositionAvailability();await apply('position',value);positionChanging=false;updatePositionAvailability();};panel.querySelector('[data-control="positions"]').append(b);});
 function labels(){for(const id of rangeFields)panel.querySelector('[data-control="'+id+'Value"]').textContent=panel.querySelector('[data-control="'+id+'"]').value+(id==='zoom'?'×':'%');}
 async function apply(field,value){
     pendingFields.add(field);
@@ -245,6 +254,7 @@ sorting.onchange=async()=>{
 };
 function start(){const s=initial;for(const id of ['url',...rangeFields])panel.querySelector('[data-control="'+id+'"]').value=s[id];selectPosition(s.position);labels();showStatus(s);}
 function showStatus(s){
+confirmedPosition=s.position;
 if(button.textContent!==s.name){
     button.textContent=s.name;
     button.title=s.name;
@@ -290,7 +300,7 @@ if(!sourceBusy&&s.error!==null)showError(s.error);
 const busy=sourceBusy||(errorView.hidden&&s.loading&&!s.playing);status.classList.toggle('loading',busy);status.setAttribute('aria-busy',String(busy));
 status.textContent=sourceBusy?'Loading source…':s.playing?'Playing':s.loading&&errorView.hidden?s.loadingText:s.queueLength?s.playbackState:'';}
 start();
-    controllers.set(initial.id,{panel,tab,button,renameButton,showStatus,dispose:cancelLocalSource});
+    controllers.set(initial.id,{panel,tab,button,renameButton,showStatus,positionChanging:()=>positionChanging,reservedPositions:()=>[confirmedPosition,position],dispose:cancelLocalSource});
 }
 function refresh(s){
     if(s.revision<=latestRevision)return;
@@ -309,6 +319,7 @@ function refresh(s){
         controllers.get(player.id).showStatus(state);
     }
     document.querySelector('#debugEnabled').checked=s.debugEnabled;
+    updatePositionAvailability();
     document.querySelector('#debugPanel').hidden=!s.debugEnabled;
     document.querySelector('#debugInfo').textContent=s.players.map(p=>p.name+'\n'+p.debugText).join('\n\n');
     selectPlayer(activePlayerId);
@@ -320,7 +331,7 @@ document.querySelector('#addPlayer').onclick=async event=>{
         const player=await(await sharedRequest('/players',{method:'POST'})).json();
         refresh(await readState());
         if(controllers.has(player.id))selectPlayer(player.id,true);
-    }finally{button.disabled=false;}
+    }finally{updatePositionAvailability();}
 };
 async function start(){refresh(await readState());setTimeout(start,1500);}
 start();

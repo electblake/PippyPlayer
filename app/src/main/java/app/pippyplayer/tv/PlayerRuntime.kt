@@ -73,6 +73,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         }
     }
     init {
+        DiagnosticLog.write(this, "player=$id CREATE position=$position")
         queue.sort(settings.sorting)
         rebufferMs = settings.networkCacheMs
         // Keep decoder prewarming disabled; only compressed samples are preloaded.
@@ -147,6 +148,12 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         player.addListener(loadingListener)
         player.addListener(PlayerVisibilityListener(window))
         player.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id STATE $playbackState playing=${player.isPlaying} item=${queue.index}")
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id ERROR ${error.stackTraceToString()}")
+            }
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 if (mediaItem != null && !updatingQueueWindow) {
                     queue.selectId(mediaItem.mediaId)
@@ -165,10 +172,12 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             override fun onVideoDecoderInitialized(eventTime: AnalyticsListener.EventTime, name: String,
                 initializedTimestampMs: Long, initializationDurationMs: Long) {
                 decoderName = name
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id DECODER $name initMs=$initializationDurationMs")
                 previousSample = null
             }
             override fun onVideoDecoderReleased(eventTime: AnalyticsListener.EventTime, name: String) {
                 decoderName = null
+                DiagnosticLog.write(this@PlayerRuntime, "player=$id DECODER RELEASE $name")
                 previousSample = null
             }
         })
@@ -202,6 +211,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             .put("elapsed", player.currentPosition)
 
     suspend fun loadSource(url: String, requestId: String) {
+        DiagnosticLog.write(this, "player=$id SOURCE begin request=$requestId")
         playWhenLoaded = true
         showWhenLoaded = true
         sourceRequest.load(url, shared.upnpServer, requestId) { entries ->
@@ -209,6 +219,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
             loadQueue()
             settings.lastPlayedUrl = url
             shared.recordPlayedUrl(url)
+            DiagnosticLog.write(this, "player=$id SOURCE loaded count=${queue.count}")
         }
     }
 
@@ -219,6 +230,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     }
 
     fun resume() {
+        DiagnosticLog.write(this, "player=$id RESUME")
         playWhenLoaded = true
         showWhenLoaded = true
         if (queue.count == 0) return
@@ -229,6 +241,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
     }
 
     fun pause() {
+        DiagnosticLog.write(this, "player=$id PAUSE")
         playWhenLoaded = false
         player.pause()
         player.stop() // Retains timeline and position while releasing codecs and sample buffers.
@@ -254,6 +267,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         settings.repeatOne = player.repeatMode == Player.REPEAT_MODE_ONE
     }
     fun stop() {
+        DiagnosticLog.write(this, "player=$id STOP")
         sourceRequest.cancel()
         playWhenLoaded = false
         showWhenLoaded = false
@@ -269,6 +283,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         position: Position?, size: Int?, zoom: Float?, volume: Int?, offsetX: Int? = null, offsetY: Int? = null,
         cropTop: Int? = null, cropRight: Int? = null, cropBottom: Int? = null, cropLeft: Int? = null,
     ) {
+        DiagnosticLog.write(this, "player=$id CONFIG position=$position size=$size zoom=$zoom volume=$volume offset=$offsetX,$offsetY crop=$cropTop,$cropRight,$cropBottom,$cropLeft")
         if (volume != null) {
             this.volume = volume
             settings.volume = volume
@@ -365,7 +380,9 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         return windowChanged
     }
     fun updateWindow() {
+        DiagnosticLog.write(this, "player=$id WINDOW begin position=$position size=$size zoom=$zoom")
         if (setLayout()) manager.updateViewLayout(window, layout)
+        DiagnosticLog.write(this, "player=$id WINDOW done")
     }
     fun setDebugEnabled(enabled: Boolean) {
         previousSample = null
@@ -421,6 +438,7 @@ internal class PlayerRuntime(context: android.content.Context, val id: String, p
         "suppression=${player.playbackSuppressionReason} · rendered=${player.videoDecoderCounters?.renderedOutputBufferCount}"
 
     fun release() {
+        DiagnosticLog.write(this, "player=$id RELEASE begin")
         sourceRequest.cancel()
         main.removeCallbacksAndMessages(null)
         player.stop()

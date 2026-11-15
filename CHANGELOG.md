@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-14
+
+### Added
+
+- Added bounded local diagnostic logs flushed to storage after each event, recording player creation, playback states, decoder events, playback errors, and layout changes across app restarts.
+- Added a compact TV Diagnostic log screen with the last 40 lines before restart, latest events, and full history, accessible from the home and crash screens.
+
+### Fixed
+
+- Disabled positions occupied by other players, reserving both the old and requested positions until a move completes and rejecting conflicting position requests in the app.
+- Assigned new players an unused position and disabled Add player when all nine positions are occupied.
+
 ## [0.16.0] - 2026-11-14
 
 ### Added

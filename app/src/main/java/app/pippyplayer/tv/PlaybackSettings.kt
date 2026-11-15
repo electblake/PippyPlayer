@@ -48,8 +48,11 @@ class PlaybackSettings(private val context: Context) {
     }
     fun addPlayer(): String {
         val ids = playerIds
+        val occupied = ids.map { player(it).position }.toSet()
+        val position = Position.entries.reversed().first { it !in occupied }
         val nextId = shared.getInt("nextPlayerId", 2)
         val id = nextId.toString()
+        PlayerSettings(context, id).saveLayout(position, 30, 1f)
         shared.edit {
             putString("players", JSONArray(ids + id).toString())
             putInt("nextPlayerId", nextId + 1)
