@@ -69,6 +69,10 @@ class PlayerService : Service() {
                     withContext(Dispatchers.Main) { shared.nameRecentUrl(url, name) }
                     call.respondText("OK")
                 }
+                post("/playlist-cache/clear") {
+                    PlaylistCache(this@PlayerService).clear()
+                    call.respondText("OK")
+                }
                 post("/debug") {
                     val fields = call.receiveParameters()
                     val enabled = fields.getAll("enabled")!!.single().toBooleanStrict()
